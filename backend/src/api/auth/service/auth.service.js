@@ -1,0 +1,71 @@
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { safeExecute } from '../../../../db/config.js';
+import {
+  BadRequestError,
+  UnauthenticatedError,
+} from '../../../utils/errors/index.js';
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '1d';
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
+const normalizeEmail = email => email.trim().toLowerCase();
+
+/**
+ * Checks if a user exists by email.
+ * NOTE: expects an already-normalized email (see normalizeEmail).
+ *
+ * @param {string} normalizedEmail - The normalized email to check.
+ * @returns {Promise<boolean>} True if the user exists, false otherwise.
+ */
+export const checkUserExists = async normalizedEmail => {
+  // TODO: Query the users table for a row matching normalizedEmail.
+  // Return true if a row is found, false otherwise.
+};
+
+/**
+ * Registers a new user in the database.
+ *
+ * @param {Object} userData - The user data.
+ * @param {string} userData.firstName - The first name.
+ * @param {string} userData.lastName - The last name.
+ * @param {string} userData.email - The email address.
+ * @param {string} userData.password - The plain text password.
+ * @returns {Promise<Object>} The created user object (without password).
+ */
+export const registerService = async ({
+  firstName,
+  lastName,
+  email,
+  password,
+}) => {
+  // TODO: Implement registration.
+  // 1. Normalize the email
+  // 2. Check if the user already exists (throw BadRequestError if so)
+  // 3. Hash the password with bcrypt
+  // 4. Insert the new user into the database
+  // 5. Return the created user (id, firstName, lastName, email) - no password
+};
+
+/**
+ * Authenticates a user and generates a JWT token.
+ *
+ * @param {Object} credentials - The login credentials.
+ * @param {string} credentials.email - The user's email.
+ * @param {string} credentials.password - The user's plain text password.
+ * @returns {Promise<Object>} An object containing the user and token.
+ * @throws {UnauthenticatedError} If authentication fails.
+ */
+export const loginService = async ({ email, password }) => {
+  // TODO: Implement login.
+  // 1. Normalize the email and look up the user
+  // 2. If no user found, throw UnauthenticatedError('Invalid email or password')
+  // 3. Compare the provided password against the stored hash with bcrypt
+  // 4. If it doesn't match, throw UnauthenticatedError('Invalid email or password')
+  // 5. Sign a JWT with { id, firstName, lastName } using JWT_SECRET / JWT_EXPIRES_IN
+  // 6. Return { user, token }
+};

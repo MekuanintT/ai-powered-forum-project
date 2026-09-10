@@ -25,6 +25,11 @@ const normalizeEmail = email => email.trim().toLowerCase();
 export const checkUserExists = async normalizedEmail => {
   // TODO: Query the users table for a row matching normalizedEmail.
   // Return true if a row is found, false otherwise.
+  
+  // const normalizedEmail = normalizeEmail(email);
+  const sql = 'SELECT user_id FROM users WHERE email = ? LIMIT 1';
+  const rows = await safeExecute(sql, [normalizedEmail]);
+  return rows.length > 0;
 };
 
 /**
@@ -49,6 +54,39 @@ export const registerService = async ({
   // 3. Hash the password with bcrypt
   // 4. Insert the new user into the database
   // 5. Return the created user (id, firstName, lastName, email) - no password
+  
+  const normalizedEmail = normalizeEmail(email);
+  const userExists = await checkUserExists(normalizedEmail);
+  if (userExists) {
+    throw new BadRequestError('User already exists with this email.');
+  }
+
+  // every time we call bcrypt.genSalt, it generates a new random salt string.
+  const salt = await bcrypt.genSalt(10); // generates a unique random salt each call
+  const hashedPassword = await bcrypt.hash(password, salt);
+  const sql =
+    'INSERT INTO users (first_name, last_name, email, password_hash) VALUES (?, ?, ?, ?)';
+  let result;
+  try {
+    result = await safeExecute(sql, [
+      firstName,
+      lastName,
+      normalizedEmail,
+      hashedPassword,
+    ]);
+  } catch (error) {
+    if (error?.code === 'ER_DUP_ENTRY') {
+      throw new BadRequestError('User already exists with this email.');
+    }
+    throw error;
+  }
+
+  return {
+    id: result.insertId,
+    firstName,
+    lastName,
+    email: normalizedEmail,
+  };
 };
 
 /**

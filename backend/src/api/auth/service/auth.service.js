@@ -106,4 +106,38 @@ export const loginService = async ({ email, password }) => {
   // 4. If it doesn't match, throw UnauthenticatedError('Invalid email or password')
   // 5. Sign a JWT with { id, firstName, lastName } using JWT_SECRET / JWT_EXPIRES_IN
   // 6. Return { user, token }
+
+  const normalizedEmail = normalizeEmail(email);
+  const sql =
+    "SELECT user_id, first_name, last_name, email, password_hash FROM users WHERE email = ? LIMIT 1";
+  const rows = await safeExecute(sql, [normalizedEmail]);
+
+  if (rows.length === 0) {
+    throw new UnauthenticatedError("Invalid email or password");
+  }
+
+  const user = rows[0];
+  const isMatch = await bcrypt.compare(password, user.password_hash);
+
+  if (!isMatch) {
+    throw new UnauthenticatedError("Invalid email or password");
+  }
+
+  const payload = {
+    id: user.user_id,
+    firstName: user.first_name,
+    lastName: user.last_name,
+  };
+
+  const token = jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+
+  return {
+    user: {
+      id: user.user_id,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+    },
+    token,
+  };
 };

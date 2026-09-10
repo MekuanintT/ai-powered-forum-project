@@ -37,4 +37,14 @@ export const registerValidation = [
 // TODO: Implement login validation rules.
 // Required fields: email (must be a valid email), password (required).
 // Remember to end the chain with validationErrorHandler.
-export const loginValidation = [validationErrorHandler];
+export const loginValidation = [
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("A valid email address is required")
+    .normalizeEmail(),
+  body("password").notEmpty().withMessage("Password is required"),
+
+  validationErrorHandler,
+];

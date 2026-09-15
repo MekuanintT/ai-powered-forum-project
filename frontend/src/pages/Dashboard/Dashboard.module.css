@@ -1,0 +1,757 @@
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+.dashboard {
+  width: 100%;
+  max-width: 1110px;
+  margin: 0 auto;
+  padding: 22px 28px 60px;
+
+  color: #17233c;
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   WELCOME CARD
+========================================================= */
+
+.welcomeCard {
+  background: #ffffff;
+  border: 1px solid #dfe6ee;
+  border-radius: 14px;
+  padding: 28px 28px 26px;
+  margin-bottom: 18px;
+
+  box-shadow:
+    0 1px 2px rgba(18, 32, 52, 0.03);
+}
+
+.eyebrow {
+  margin-bottom: 8px;
+
+  color: #f45f12;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.welcomeCard h1 {
+  margin: 0 0 8px;
+
+  color: #162139;
+  font-size: 27px;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.welcomeDescription {
+  max-width: 680px;
+  margin: 0;
+
+  color: #40506a;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   ACTION CARDS
+========================================================= */
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+
+  margin-top: 22px;
+}
+
+.actionCard {
+  min-height: 78px;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  padding: 14px 16px;
+
+  background: #f8fafc;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+
+  color: #17233c;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.actionCard:hover {
+  background: #ffffff;
+  border-color: #f4b28b;
+  transform: translateY(-1px);
+}
+
+.actionCard:focus-visible {
+  outline: 2px solid #ff6b16;
+  outline-offset: 2px;
+}
+
+.actionIcon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid #dce5ef;
+  border-radius: 8px;
+
+  background: #f4f7fa;
+  color: #ff6415;
+
+  font-size: 21px;
+  line-height: 1;
+}
+
+.actionCard span:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.actionCard strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #17233c;
+}
+
+.actionCard small {
+  color: #46556d;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.searchSection {
+  margin-bottom: 18px;
+}
+
+.searchForm {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchInputWrapper {
+  position: relative;
+  flex: 1;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+
+  transform: translateY(-50%);
+
+  color: #708097;
+  font-size: 20px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 42px;
+  box-sizing: border-box;
+
+  padding: 0 14px 0 38px;
+
+  background: #ffffff;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+
+  color: #17233c;
+  font-size: 13px;
+
+  outline: none;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.searchInput::placeholder {
+  color: #a2adbc;
+}
+
+.searchInput:focus {
+  border-color: #ff7a32;
+
+  box-shadow:
+    0 0 0 3px rgba(255, 105, 24, 0.08);
+}
+
+.searchMode {
+  height: 42px;
+
+  padding: 0 12px;
+
+  background: #ffffff;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+
+  color: #34445d;
+  font-size: 12px;
+
+  outline: none;
+}
+
+.searchButton {
+  height: 42px;
+
+  padding: 0 18px;
+
+  background: #ff6817;
+  border: 1px solid #ff6817;
+  border-radius: 8px;
+
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.searchButton:hover {
+  background: #ed5a0c;
+}
+
+.searchButton:active {
+  transform: translateY(1px);
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  margin-bottom: 20px;
+}
+
+.statCard {
+  min-height: 74px;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 13px 15px;
+
+  background: #f2f6fa;
+  border: 1px solid #dde5ee;
+  border-radius: 8px;
+}
+
+.statCard span {
+  margin-bottom: 5px;
+
+  color: #51617a;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.statCard strong {
+  color: #17233c;
+  font-size: 20px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   DISCUSSION FEED
+========================================================= */
+
+.feedCard {
+  overflow: hidden;
+
+  background: #ffffff;
+  border: 1px solid #dfe6ee;
+  border-radius: 14px;
+
+  box-shadow:
+    0 1px 2px rgba(18, 32, 52, 0.025);
+}
+
+.feedHeader {
+  min-height: 70px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 15px 18px;
+
+  background: #f9fbfd;
+  border-bottom: 1px solid #dfe6ee;
+}
+
+.feedHeader h2 {
+  margin: 0 0 4px;
+
+  color: #17233c;
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.feedHeader p {
+  margin: 0;
+
+  color: #62718a;
+  font-size: 10px;
+}
+
+.sortButton {
+  padding: 6px 13px;
+
+  background: #ff6817;
+  border: none;
+  border-radius: 7px;
+
+  color: #ffffff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+
+  cursor: pointer;
+}
+
+.sortButton:hover {
+  background: #ed5a0c;
+}
+
+
+/* =========================================================
+   FEED CONTENT
+========================================================= */
+
+.feedContent {
+  min-height: 180px;
+}
+
+.questionList {
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================================
+   QUESTION ROW
+========================================================= */
+
+.questionRow {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 13px;
+
+  min-height: 77px;
+  box-sizing: border-box;
+
+  padding: 12px 18px 12px 21px;
+
+  background: #ffffff;
+  border-bottom: 1px solid #e8edf2;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.12s ease;
+}
+
+.questionRow::before {
+  content: '';
+
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+
+  width: 2px;
+
+  background: transparent;
+}
+
+.questionRow:hover {
+  background: #fbfcfd;
+}
+
+.questionRow:hover::before {
+  background: #ff6817;
+}
+
+.questionRow:last-child {
+  border-bottom: none;
+}
+
+.questionRow:focus-visible {
+  outline: 2px solid #ff6817;
+  outline-offset: -2px;
+}
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: #20bf3c;
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+
+/* =========================================================
+   QUESTION BODY
+========================================================= */
+
+.questionBody {
+  min-width: 0;
+  flex: 1;
+}
+
+.questionBody h3 {
+  overflow: hidden;
+
+  margin: 0 0 5px;
+
+  color: #26354e;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.questionExcerpt {
+  overflow: hidden;
+
+  margin: 0 0 5px;
+
+  color: #68768a;
+  font-size: 10px;
+  line-height: 1.35;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.questionMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  color: #8a96a6;
+  font-size: 9px;
+  line-height: 1;
+}
+
+.questionMeta span {
+  white-space: nowrap;
+}
+
+
+/* =========================================================
+   QUESTION STATUS
+========================================================= */
+
+.answeredStatus,
+.unansweredStatus {
+  flex: 0 0 auto;
+
+  min-width: 60px;
+
+  padding: 5px 7px;
+
+  border-radius: 5px;
+
+  font-size: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.answeredStatus {
+  background: #edf8ef;
+  color: #29933d;
+}
+
+.unansweredStatus {
+  background: #fff4ed;
+  color: #e85e16;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.loadingState {
+  min-height: 180px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  color: #52627a;
+}
+
+.loadingState p {
+  margin: 0;
+
+  font-size: 12px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+
+  border: 2px solid #e5ebf1;
+  border-top-color: #ff6817;
+  border-radius: 50%;
+
+  animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.emptyState {
+  min-height: 230px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+  box-sizing: border-box;
+
+  text-align: center;
+}
+
+.emptyIcon {
+  width: 42px;
+  height: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-bottom: 10px;
+
+  border-radius: 10px;
+
+  background: #f3f6f9;
+  color: #75849a;
+
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.emptyState h3 {
+  margin: 0 0 5px;
+
+  color: #26354e;
+  font-size: 13px;
+}
+
+.emptyState p {
+  margin: 0 0 15px;
+
+  color: #7b899c;
+  font-size: 10px;
+}
+
+.newQuestionButton {
+  padding: 8px 14px;
+
+  background: #ff6817;
+  border: none;
+  border-radius: 6px;
+
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+
+/* =========================================================
+   ERROR STATE
+========================================================= */
+
+.errorState {
+  min-height: 180px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 12px;
+
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.errorState p {
+  margin: 0;
+
+  padding: 28px;
+
+  background: #ffe1e1;
+  border: 1px solid #ffbcbc;
+  border-radius: 10px;
+
+  color: #ff3d3d;
+  font-size: 12px;
+  text-align: center;
+}
+
+.retryButton {
+  padding: 8px 14px;
+
+  background: #ffffff;
+  border: 1px solid #e6a1a1;
+  border-radius: 6px;
+
+  color: #d94d4d;
+  font-size: 10px;
+
+  cursor: pointer;
+}
+
+.retryButton:hover {
+  background: #fff5f5;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 900px) {
+  .actionGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+@media (max-width: 640px) {
+  .dashboard {
+    padding: 16px 12px 40px;
+  }
+
+  .welcomeCard {
+    padding: 20px;
+  }
+
+  .welcomeCard h1 {
+    font-size: 23px;
+  }
+
+  .searchForm {
+    flex-wrap: wrap;
+  }
+
+  .searchInputWrapper {
+    flex: 1 1 100%;
+  }
+
+  .searchMode {
+    flex: 1;
+  }
+
+  .searchButton {
+    flex: 0 0 auto;
+  }
+
+  .statsGrid {
+    gap: 8px;
+  }
+
+  .questionRow {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .answeredStatus,
+  .unansweredStatus {
+    display: none;
+  }
+
+  .questionBody h3 {
+    white-space: normal;
+  }
+
+  .questionMeta {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+}

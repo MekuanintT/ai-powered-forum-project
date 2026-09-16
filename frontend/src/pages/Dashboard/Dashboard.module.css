@@ -7,7 +7,7 @@
   max-width: 1110px;
   margin: 0 auto;
   padding: 22px 28px 60px;
-
+ 
   color: #17233c;
   box-sizing: border-box;
 }
@@ -18,7 +18,7 @@
 ========================================================= */
 
 .welcomeCard {
-  background: #ffffff;
+  background: #ffffff; 
   border: 1px solid #dfe6ee;
   border-radius: 14px;
   padding: 28px 28px 26px;

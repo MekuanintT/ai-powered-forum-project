@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'; 
 import { useNavigate } from 'react-router-dom';
 
 import {
   getQuestions,
   searchQuestionsSemantic,
-} from '../../services/question/question.service';
+} from '../../services/question/question.service'; 
 
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Dashboard.module.css';

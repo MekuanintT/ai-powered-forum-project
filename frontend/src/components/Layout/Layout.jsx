@@ -18,7 +18,8 @@ export default function Layout() {
     if (path === '/dashboard') return 'Home';
     if (path === '/my-questions') return 'Your topics';
     if (path === '/questions/ask') return 'Ask a question';
-    if (path.startsWith('/question/')) return 'Discussion';
+    if (path.startsWith('/questions/') || path.startsWith('/question/'))
+      return 'Discussion';
     if (path === '/rag-documents') return 'Knowledge base';
     return 'Forum';
   };
@@ -32,7 +33,7 @@ export default function Layout() {
       return 'Questions you have posted. Open any thread to read replies or edit context.';
     if (path === '/questions/ask')
       return 'A clear title and reproducible steps get faster, more accurate answers.';
-    if (path.startsWith('/question/'))
+    if (path.startsWith('/questions/') || path.startsWith('/question/'))
       return 'Read the thread, review related topics, and reply with markdown if you can help.';
     if (path === '/rag-documents')
       return 'Private PDF library: reader, semantic search, and AI answers with citations per document.';

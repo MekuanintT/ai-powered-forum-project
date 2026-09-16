@@ -1,0 +1,75 @@
+import { apiClient } from '../core/api.client.js';
+
+function getResponseData(response) {
+  return response.data?.data ?? response.data;
+}
+
+function handleQuestionError(error, fallbackMessage) {
+  if (!error.response) {
+    if (error.code === 'ECONNABORTED') {
+      return new Error('The request timed out. Please try again.');
+    }
+
+    return new Error(
+      'Unable to connect to the server. Please check your connection and try again.',
+    );
+  }
+
+  const backendMessage =
+    error.response.data?.message ||
+    error.response.data?.msg ||
+    error.response.data?.errors?.[0]?.msg;
+
+  if (error.response.status >= 500) {
+    return new Error('Something went wrong on our end. Please try again later.');
+  }
+
+  return new Error(backendMessage || fallbackMessage);
+}
+
+/**
+ * Creates a forum question for the authenticated user.
+ * @param {{ title: string, content: string }} question
+ */
+export async function createQuestion(question) {
+  try {
+    const response = await apiClient.post('/api/questions', question);
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to post question. Please try again.');
+  }
+}
+
+/**
+ * Requests writing feedback from the AI draft coach.
+ * @param {{ title: string, content: string }} draft
+ */
+export async function generateQuestionDraftCoach(draft) {
+  try {
+    const response = await apiClient.post(
+      '/api/questions/draft-coach',
+      draft,
+    );
+    const data = getResponseData(response) ?? {};
+    const tips = Array.isArray(data.tips)
+      ? data.tips
+      : Array.isArray(data.suggestions)
+        ? data.suggestions
+        : [];
+
+    return {
+      feedback: data.feedback || data.message || '',
+      tips,
+    };
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Unable to generate suggestions right now. Please try again.',
+    );
+  }
+}
+
+export const questionService = {
+  createQuestion,
+  generateQuestionDraftCoach,
+};

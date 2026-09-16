@@ -49,7 +49,7 @@ This document provides a consolidated, milestone-by-milestone breakdown of all f
 |---------|-----------|----------|--------------|-----------|
 | T-13 | Layout Shell | Damtew | Create the `Layout`, `Navbar`, and `Sidebar` components to wrap and navigate between protected routes. | — |
 | T-14 | Dashboard Page | Yonatan | Build the `/dashboard` page to list questions and handle keyword/semantic search inputs. | `/dashboard/task-dashboard.md` |
-| T-15 | Post Question Page | Mekuanint | Build the `/questions/ask` form, seamlessly integrating the AI Draft Coach for real-time writing feedback. | `/post-question/task-post-question.md` |
+| T-15 | Post Question Page | Sosi | Build the `/questions/ask` form, seamlessly integrating the AI Draft Coach for real-time writing feedback. | `/post-question/task-post-question.md` |
 | T-16 & T-20 | Question Detail Page | Ermi | Build the `/questions/:questionHash` page to display the question, answers, and the new answer form equipped with AI Answer Fit. | `/question-detail/task-question-detail.md` |
 | T-21 | My Questions Page | Ibrahim | Build the `/my-questions` page to display a personalized list of only the user's authored questions. | `/my-questions/task-my-questions.md` |
 
@@ -75,6 +75,6 @@ This document provides a consolidated, milestone-by-milestone breakdown of all f
 
 | Task ID | Task Name | Assignee | Description | Reference |
 |---------|-----------|----------|--------------|-----------|
-| T-24 & T-25 | RAG Documents Page | Mekuanint | Build the `/rag-documents` page featuring a document list sidebar, PDF upload dropzone, and a 3-tab active view interface (Ask AI, Semantic Search, PDF Preview). | `/rag-documents/task-rag-documents.md` |
+| T-24 & T-25 | RAG Documents Page | Sosi | Build the `/rag-documents` page featuring a document list sidebar, PDF upload dropzone, and a 3-tab active view interface (Ask AI, Semantic Search, PDF Preview). | `/rag-documents/task-rag-documents.md` |
 
 ---

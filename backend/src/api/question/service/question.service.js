@@ -1,16 +1,21 @@
 import crypto from 'crypto';
+
 import { safeExecute } from '../../../../db/config.js';
+
 import { BadRequestError } from '../../../utils/errors/index.js';
+
 import {
   generateQuestionEmbedding,
   normalizeQuestionText,
   storeQuestionVector,
 } from './vector.service.js';
 
-const generateQuestionHash = () => crypto.randomBytes(8).toString('hex');
+const generateQuestionHash = () =>
+  crypto.randomBytes(8).toString('hex');
 
 /**
  * Creates a new question and stores its vector embedding for semantic search.
+ *
  * @param {Object} payload - The question data
  * @param {string} payload.userId - ID of the user creating the question
  * @param {string} payload.title - Title of the question
@@ -24,6 +29,7 @@ export const createQuestionWithVectorService = async payload => {
     'INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)';
 
   const questionHash = generateQuestionHash();
+
   let questionResult;
 
   try {
@@ -37,6 +43,7 @@ export const createQuestionWithVectorService = async payload => {
     if (error?.code === 'ER_NO_REFERENCED_ROW_2') {
       throw new BadRequestError('User does not exist.');
     }
+
     throw error;
   }
 
@@ -51,12 +58,17 @@ export const createQuestionWithVectorService = async payload => {
   };
 
   // Normalize the question title to prepare it for vector embedding
-  const sourceText = normalizeQuestionText({ title: payload.title });
+  const sourceText = normalizeQuestionText({
+    title: payload.title,
+  });
 
   try {
-    const embeddingResult = await generateQuestionEmbedding(sourceText, {
-      questionId: creationResult.id,
-    });
+    const embeddingResult = await generateQuestionEmbedding(
+      sourceText,
+      {
+        questionId: creationResult.id,
+      },
+    );
 
     await storeQuestionVector({
       questionId: creationResult.id,
@@ -76,10 +88,178 @@ export const createQuestionWithVectorService = async payload => {
       sourceText,
       embedding: [],
       status: 'failed',
-    }).catch(e => console.error('Failed to save failed status', e));
+    }).catch(e =>
+      console.error(
+        'Failed to save failed status',
+        e,
+      ),
+    );
   }
 
   return {
     question: creationResult,
   };
+};
+
+/**
+ * Calculates cosine similarity between two vectors.
+ *
+ * @param {number[]} vectorA
+ * @param {number[]} vectorB
+ * @returns {number}
+ */
+const cosineSimilarity = (vectorA, vectorB) => {
+  if (
+    !Array.isArray(vectorA) ||
+    !Array.isArray(vectorB) ||
+    vectorA.length === 0 ||
+    vectorB.length === 0 ||
+    vectorA.length !== vectorB.length
+  ) {
+    return 0;
+  }
+
+  let dotProduct = 0;
+  let magnitudeA = 0;
+  let magnitudeB = 0;
+
+  for (let i = 0; i < vectorA.length; i += 1) {
+    dotProduct += vectorA[i] * vectorB[i];
+    magnitudeA += vectorA[i] * vectorA[i];
+    magnitudeB += vectorB[i] * vectorB[i];
+  }
+
+  if (magnitudeA === 0 || magnitudeB === 0) {
+    return 0;
+  }
+
+  return (
+    dotProduct /
+    (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB))
+  );
+};
+
+/**
+ * Gets questions similar to a question identified by its hash.
+ *
+ * @param {string} questionHash
+ * @returns {Promise<Array>}
+ */
+export const getSimilarQuestionsService = async questionHash => {
+  if (!questionHash) {
+    throw new BadRequestError(
+      'Question hash is required.',
+    );
+  }
+
+  // Get the requested question
+  const questionSql = `
+    SELECT
+      question_id,
+      question_hash,
+      title,
+      content,
+      user_id,
+      created_at
+    FROM questions
+    WHERE question_hash = ?
+    LIMIT 1
+  `;
+
+  const questions = await safeExecute(
+    questionSql,
+    [questionHash],
+  );
+
+  if (!questions || questions.length === 0) {
+    throw new BadRequestError(
+      'Question not found.',
+    );
+  }
+
+  const question = questions[0];
+
+  // Get the embedding of the requested question
+  const vectorSql = `
+    SELECT
+      embedding
+    FROM question_vectors
+    WHERE question_id = ?
+      AND status = 'ready'
+    LIMIT 1
+  `;
+
+  const vectorRows = await safeExecute(
+    vectorSql,
+    [question.question_id],
+  );
+
+  if (!vectorRows || vectorRows.length === 0) {
+    return [];
+  }
+
+  let targetEmbedding = vectorRows[0].embedding;
+
+  if (typeof targetEmbedding === 'string') {
+    targetEmbedding = JSON.parse(targetEmbedding);
+  }
+
+  // Get all other ready question vectors
+  const similarVectorSql = `
+    SELECT
+      q.question_id,
+      q.question_hash,
+      q.title,
+      q.content,
+      q.user_id,
+      q.created_at,
+      qv.embedding
+    FROM questions q
+    INNER JOIN question_vectors qv
+      ON q.question_id = qv.question_id
+    WHERE q.question_id != ?
+      AND qv.status = 'ready'
+  `;
+
+  const candidateRows = await safeExecute(
+    similarVectorSql,
+    [question.question_id],
+  );
+
+  const similarQuestions = candidateRows
+    .map(row => {
+      let embedding = row.embedding;
+
+      if (typeof embedding === 'string') {
+        try {
+          embedding = JSON.parse(embedding);
+        } catch {
+          return null;
+        }
+      }
+
+      const similarity = cosineSimilarity(
+        targetEmbedding,
+        embedding,
+      );
+
+      return {
+        questionId: row.question_id,
+        questionHash: row.question_hash,
+        title: row.title,
+        content: row.content,
+        userId: row.user_id,
+        createdAt: row.created_at,
+        similarity,
+      };
+    })
+    .filter(Boolean)
+    .filter(question => question.similarity > 0)
+    .sort(
+      (a, b) =>
+        b.similarity - a.similarity,
+    )
+    .slice(0, 5);
+
+  return similarQuestions;
 };

@@ -1,17 +1,16 @@
-import crypto from 'crypto';
+import crypto from "crypto";
 
-import { safeExecute } from '../../../../db/config.js';
+import { safeExecute } from "../../../../db/config.js";
 
-import { BadRequestError } from '../../../utils/errors/index.js';
+import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
 
 import {
   generateQuestionEmbedding,
   normalizeQuestionText,
   storeQuestionVector,
-} from './vector.service.js';
+} from "./vector.service.js";
 
-const generateQuestionHash = () =>
-  crypto.randomBytes(8).toString('hex');
+const generateQuestionHash = () => crypto.randomBytes(8).toString("hex");
 
 /**
  * Creates a new question and stores its vector embedding for semantic search.
@@ -22,11 +21,11 @@ const generateQuestionHash = () =>
  * @param {string} payload.content - Content/body of the question
  * @returns {Promise<Object>} Object containing the created question
  */
-export const createQuestionWithVectorService = async payload => {
+export const createQuestionWithVectorService = async (payload) => {
   const { userId, title, content } = payload;
 
   const insertQuestionSql =
-    'INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)';
+    "INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)";
 
   const questionHash = generateQuestionHash();
 
@@ -40,8 +39,8 @@ export const createQuestionWithVectorService = async payload => {
       content,
     ]);
   } catch (error) {
-    if (error?.code === 'ER_NO_REFERENCED_ROW_2') {
-      throw new BadRequestError('User does not exist.');
+    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
+      throw new BadRequestError("User does not exist.");
     }
 
     throw error;
@@ -63,37 +62,29 @@ export const createQuestionWithVectorService = async payload => {
   });
 
   try {
-    const embeddingResult = await generateQuestionEmbedding(
-      sourceText,
-      {
-        questionId: creationResult.id,
-      },
-    );
+    const embeddingResult = await generateQuestionEmbedding(sourceText, {
+      questionId: creationResult.id,
+    });
 
     await storeQuestionVector({
       questionId: creationResult.id,
       sourceText,
       embedding: embeddingResult.embedding,
-      status: 'ready',
+      status: "ready",
     });
   } catch (error) {
-    console.error('=== FAILED TO STORE VECTOR FOR QUESTION ===');
-    console.error('Question ID:', creationResult.id);
-    console.error('Operation: question creation');
-    console.error('Error:', error);
-    console.error('=============================================');
+    console.error("=== FAILED TO STORE VECTOR FOR QUESTION ===");
+    console.error("Question ID:", creationResult.id);
+    console.error("Operation: question creation");
+    console.error("Error:", error);
+    console.error("=============================================");
 
     await storeQuestionVector({
       questionId: creationResult.id,
       sourceText,
       embedding: [],
-      status: 'failed',
-    }).catch(e =>
-      console.error(
-        'Failed to save failed status',
-        e,
-      ),
-    );
+      status: "failed",
+    }).catch((e) => console.error("Failed to save failed status", e));
   }
 
   return {
@@ -133,10 +124,7 @@ const cosineSimilarity = (vectorA, vectorB) => {
     return 0;
   }
 
-  return (
-    dotProduct /
-    (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB))
-  );
+  return dotProduct / (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB));
 };
 
 /**
@@ -145,11 +133,9 @@ const cosineSimilarity = (vectorA, vectorB) => {
  * @param {string} questionHash
  * @returns {Promise<Array>}
  */
-export const getSimilarQuestionsService = async questionHash => {
+export const getSimilarQuestionsService = async (questionHash) => {
   if (!questionHash) {
-    throw new BadRequestError(
-      'Question hash is required.',
-    );
+    throw new BadRequestError("Question hash is required.");
   }
 
   // Get the requested question
@@ -166,15 +152,10 @@ export const getSimilarQuestionsService = async questionHash => {
     LIMIT 1
   `;
 
-  const questions = await safeExecute(
-    questionSql,
-    [questionHash],
-  );
+  const questions = await safeExecute(questionSql, [questionHash]);
 
   if (!questions || questions.length === 0) {
-    throw new BadRequestError(
-      'Question not found.',
-    );
+    throw new BadRequestError("Question not found.");
   }
 
   const question = questions[0];
@@ -189,10 +170,7 @@ export const getSimilarQuestionsService = async questionHash => {
     LIMIT 1
   `;
 
-  const vectorRows = await safeExecute(
-    vectorSql,
-    [question.question_id],
-  );
+  const vectorRows = await safeExecute(vectorSql, [question.question_id]);
 
   if (!vectorRows || vectorRows.length === 0) {
     return [];
@@ -200,7 +178,7 @@ export const getSimilarQuestionsService = async questionHash => {
 
   let targetEmbedding = vectorRows[0].embedding;
 
-  if (typeof targetEmbedding === 'string') {
+  if (typeof targetEmbedding === "string") {
     targetEmbedding = JSON.parse(targetEmbedding);
   }
 
@@ -221,16 +199,15 @@ export const getSimilarQuestionsService = async questionHash => {
       AND qv.status = 'ready'
   `;
 
-  const candidateRows = await safeExecute(
-    similarVectorSql,
-    [question.question_id],
-  );
+  const candidateRows = await safeExecute(similarVectorSql, [
+    question.question_id,
+  ]);
 
   const similarQuestions = candidateRows
-    .map(row => {
+    .map((row) => {
       let embedding = row.embedding;
 
-      if (typeof embedding === 'string') {
+      if (typeof embedding === "string") {
         try {
           embedding = JSON.parse(embedding);
         } catch {
@@ -238,10 +215,7 @@ export const getSimilarQuestionsService = async questionHash => {
         }
       }
 
-      const similarity = cosineSimilarity(
-        targetEmbedding,
-        embedding,
-      );
+      const similarity = cosineSimilarity(targetEmbedding, embedding);
 
       return {
         questionId: row.question_id,
@@ -254,11 +228,8 @@ export const getSimilarQuestionsService = async questionHash => {
       };
     })
     .filter(Boolean)
-    .filter(question => question.similarity > 0)
-    .sort(
-      (a, b) =>
-        b.similarity - a.similarity,
-    )
+    .filter((question) => question.similarity > 0)
+    .sort((a, b) => b.similarity - a.similarity)
     .slice(0, 5);
 
   return similarQuestions;
@@ -445,6 +416,101 @@ export const searchQuestionsSemanticService = async ({
       threshold,
       query,
       questionHash: null,
+    },
+  };
+};
+
+export const getSingteQuestionService = async (
+  questionHash,
+  includeAnswers = true
+) => {
+  const normalizedAnswerLimit = 100; // Fixed max 100 records
+
+  const questionSqt = `
+    SELECT
+      q.question_id AS id,
+      q.question_hash AS questionHash,
+      q.title,
+      q.content,
+      q.created_at AS createdAt,
+      q.updated_at AS updatedAt,
+      u.user_id AS userId,
+      u.first_name AS firstName,
+      u.last_name AS lastName,
+      COUNT(DISTINCT a.answer_id) AS answerCount
+    FROM questions q
+    JOIN users u ON u.user_id = q.user_id
+    LEFT JOIN answers a ON a.question_id = q.question_id
+    WHERE q.question_hash = ?
+    GROUP BY q.question_id, u.user_id
+  `;
+
+  const questionRows = await safeExecute(questionSqt, [questionHash]);
+
+  if (!questionRows.length) {
+    throw new NotFoundError("Question not found");
+  }
+
+  if (!includeAnswers) {
+    return {
+      question: questionRows[0],
+    };
+  }
+
+  const question = questionRows[0];
+  const questionId = question.id;
+
+  const answersSqt = `
+    SELECT
+      a.answer_id AS id,
+      a.content,
+      a.created_at AS createdAt,
+      a.updated_at AS updatedAt,
+      au.user_id AS userId,
+      au.first_name AS firstName,
+      au.last_name AS lastName
+    FROM answers a
+    JOIN users au ON au.user_id = a.user_id
+    WHERE a.question_id = ?
+    ORDER BY a.created_at DESC
+    LIMIT ${normalizedAnswerLimit}
+  `;
+
+  const answers = await safeExecute(answersSqt, [questionId]);
+
+  return {
+    question: {
+      id: question.id,
+      questionHash: question.questionHash,
+      title: question.title,
+      content: question.content,
+      answerCount: question.answerCount,
+      createdAt: question.createdAt,
+      updatedAt: question.updatedAt,
+
+      author: {
+        id: question.userId,
+        firstName: question.firstName,
+        lastName: question.lastName,
+      },
+
+      answers: answers.map((answer) => ({
+        id: answer.id,
+        content: answer.content,
+        createdAt: answer.createdAt,
+        updatedAt: answer.updatedAt,
+
+        author: {
+          id: answer.userId,
+          firstName: answer.firstName,
+          lastName: answer.lastName,
+        },
+      })),
+
+      answersMeta: {
+        limit: normalizedAnswerLimit,
+        total: answers.length,
+      },
     },
   };
 };

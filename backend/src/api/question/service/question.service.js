@@ -607,3 +607,115 @@ export const getQuestionsService = async ({ search, mine, userId }) => {
     },
   };
 };
+
+
+
+
+
+/**
+ * Fetches a single question, its author, and its answers by hash.
+ *
+ * NOTE: this replaces the old `getSingteQuestionService` (typo in the name,
+ * and it was never imported by the controller). Two other fixes bundled in:
+ *   1. `answers` / `answersMeta` are now returned as siblings of `question`,
+ *      not nested inside it — matches the documented response contract and
+ *      what the frontend's getSingleQuestion() already expects.
+ *   2. `answerCount` is cast to Number, same as getQuestionsService and
+ *      searchQuestionsSemanticService do, since MySQL can return COUNT()
+ *      as a string depending on the driver config.
+ *
+ * @param {string} questionHash
+ * @param {boolean} [includeAnswers=true]
+ * @returns {Promise<{ question: Object, answers: Array, answersMeta: Object }>}
+ */
+export const getSingleQuestionService = async (
+  questionHash,
+  includeAnswers = true
+) => {
+  const normalizedAnswerLimit = 100; // Fixed max 100 records
+
+  const questionSql = `
+    SELECT
+      q.question_id AS id,
+      q.question_hash AS questionHash,
+      q.title,
+      q.content,
+      q.created_at AS createdAt,
+      q.updated_at AS updatedAt,
+      u.user_id AS userId,
+      u.first_name AS firstName,
+      u.last_name AS lastName,
+      COUNT(DISTINCT a.answer_id) AS answerCount
+    FROM questions q
+    JOIN users u ON u.user_id = q.user_id
+    LEFT JOIN answers a ON a.question_id = q.question_id
+    WHERE q.question_hash = ?
+    GROUP BY q.question_id, u.user_id
+  `;
+
+  const questionRows = await safeExecute(questionSql, [questionHash]);
+
+  if (!questionRows.length) {
+    throw new NotFoundError("Question not found");
+  }
+
+  const row = questionRows[0];
+
+  const question = {
+    id: row.id,
+    questionHash: row.questionHash,
+    title: row.title,
+    content: row.content,
+    answerCount: Number(row.answerCount),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    author: {
+      id: row.userId,
+      firstName: row.firstName,
+      lastName: row.lastName,
+    },
+  };
+
+  if (!includeAnswers) {
+    return { question, answers: [], answersMeta: { limit: normalizedAnswerLimit, total: 0 } };
+  }
+
+  const answersSql = `
+    SELECT
+      a.answer_id AS id,
+      a.content,
+      a.created_at AS createdAt,
+      a.updated_at AS updatedAt,
+      au.user_id AS userId,
+      au.first_name AS firstName,
+      au.last_name AS lastName
+    FROM answers a
+    JOIN users au ON au.user_id = a.user_id
+    WHERE a.question_id = ?
+    ORDER BY a.created_at DESC
+    LIMIT ${normalizedAnswerLimit}
+  `;
+
+  const answerRows = await safeExecute(answersSql, [question.id]);
+
+  const answers = answerRows.map((answer) => ({
+    id: answer.id,
+    content: answer.content,
+    createdAt: answer.createdAt,
+    updatedAt: answer.updatedAt,
+    author: {
+      id: answer.userId,
+      firstName: answer.firstName,
+      lastName: answer.lastName,
+    },
+  }));
+
+  return {
+    question,
+    answers,
+    answersMeta: {
+      limit: normalizedAnswerLimit,
+      total: answers.length,
+    },
+  };
+};

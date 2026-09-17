@@ -1,0 +1,701 @@
+/* =========================================================
+   QUESTION DETAIL
+
+   Tokens mirror Dashboard.module.css: #17233c ink, #ff6817
+   accent, white cards on a pale blue-grey page.
+========================================================= */
+
+.page {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 26px 34px 70px;
+  box-sizing: border-box;
+  color: #17233c;
+}
+
+/* ---------------------------------------------------------
+   Back link
+--------------------------------------------------------- */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: #45536e;
+  cursor: pointer;
+}
+
+.backLink:hover {
+  color: #ff6817;
+}
+
+/* ---------------------------------------------------------
+   Layout
+
+   Row 1 pairs the question with the related-questions rail.
+   Everything after it runs the full width.
+--------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  column-gap: 36px;
+  row-gap: 40px;
+  align-items: start;
+}
+
+.questionCard {
+  grid-column: 1 / 2;
+  background: #ffffff;
+  border: 1px solid #e6ebf3;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(23, 35, 60, 0.04);
+  padding: 30px 32px;
+}
+
+.sidebar {
+  grid-column: 2 / 3;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.answersSection,
+.formSection {
+  grid-column: 1 / -1;
+}
+
+/* ---------------------------------------------------------
+   Author row + avatars
+--------------------------------------------------------- */
+
+.authorRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.avatar {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tintTeal    { background: #99e9e4; color: #0d4f4a; }
+.tintForest  { background: #0f6b4f; color: #ffffff; }
+.tintAmber   { background: #ffd9b8; color: #8a4409; }
+.tintIndigo  { background: #d4dbff; color: #2b357c; }
+.tintRose    { background: #ffd4dd; color: #8c2440; }
+.tintSlate   { background: #dbe3ef; color: #35486b; }
+
+.authorName {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.authorMeta {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #7b8aa3;
+}
+
+/* ---------------------------------------------------------
+   Question body
+--------------------------------------------------------- */
+
+.questionTitle {
+  margin: 0 0 18px;
+  font-size: 29px;
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+
+.questionFooter {
+  display: flex;
+  gap: 12px;
+  margin-top: 26px;
+  padding-top: 22px;
+  border-top: 1px solid #edf1f7;
+}
+
+/* ---------------------------------------------------------
+   Markdown
+
+   Scoped tightly so question and answer content share one
+   set of rules and nothing leaks into the chrome around it.
+--------------------------------------------------------- */
+
+.markdownBody {
+  font-size: 16px;
+  line-height: 1.65;
+  color: #2c3a55;
+  overflow-wrap: break-word;
+}
+
+.markdownBody > :first-child { margin-top: 0; }
+.markdownBody > :last-child  { margin-bottom: 0; }
+
+.markdownBody h1,
+.markdownBody h2,
+.markdownBody h3 {
+  margin: 28px 0 8px;
+  font-weight: 800;
+  line-height: 1.3;
+  color: #17233c;
+}
+
+.markdownBody h1 { font-size: 22px; }
+.markdownBody h2 { font-size: 20px; }
+.markdownBody h3 { font-size: 17px; }
+
+.markdownBody p {
+  margin: 0 0 14px;
+}
+
+.markdownBody ul,
+.markdownBody ol {
+  margin: 0 0 14px;
+  padding-left: 24px;
+}
+
+.markdownBody li {
+  margin-bottom: 6px;
+}
+
+.markdownBody a {
+  color: #ff6817;
+  text-decoration: none;
+}
+
+.markdownBody a:hover {
+  text-decoration: underline;
+}
+
+.markdownBody code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #fff1e6;
+  color: #c24e06;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+}
+
+.markdownBody pre {
+  margin: 0 0 16px;
+  padding: 18px 20px;
+  border-radius: 10px;
+  background: #f1f4f9;
+  overflow-x: auto;
+}
+
+.markdownBody pre code {
+  padding: 0;
+  background: none;
+  color: #2c3a55;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.markdownBody blockquote {
+  margin: 0 0 14px;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid #ffcba6;
+  color: #5c6b85;
+}
+
+.markdownBody img {
+  max-width: 100%;
+}
+
+/* ---------------------------------------------------------
+   Related questions
+--------------------------------------------------------- */
+
+.sidebarTitle {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sidebarEmpty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #7b8aa3;
+}
+
+.relatedCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 18px;
+  border: 1px solid #e6ebf3;
+  border-radius: 12px;
+  background: #ffffff;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.relatedCard:hover {
+  border-color: #ffc9a3;
+}
+
+.relatedTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #ff6817;
+}
+
+.relatedMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #8d9ab0;
+}
+
+/* ---------------------------------------------------------
+   Answers
+--------------------------------------------------------- */
+
+.sectionHeading {
+  margin: 0 0 18px;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.answerList {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.answerCard {
+  background: #ffffff;
+  border: 1px solid #e6ebf3;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(23, 35, 60, 0.04);
+  padding: 26px 30px;
+}
+
+.emptyAnswers {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 58px 32px;
+  border: 1px dashed #d4dded;
+  border-radius: 14px;
+  background: #f0f3f9;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: #9aa8bf;
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.emptyText {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: #6b7a93;
+}
+
+/* ---------------------------------------------------------
+   Answer form
+--------------------------------------------------------- */
+
+.formCard {
+  background: #ffffff;
+  border: 1px solid #e6ebf3;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(23, 35, 60, 0.04);
+  padding: 28px 32px 26px;
+}
+
+.formTitle {
+  margin: 0 0 18px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.formError {
+  margin: 0 0 14px;
+  font-size: 14.5px;
+  color: #f2545b;
+}
+
+.editor {
+  border: 1px solid #dde4ef;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 14px;
+  background: #f1f4f9;
+  border-bottom: 1px solid #dde4ef;
+}
+
+.toolbarButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbarButtons button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  color: #4a5a76;
+  cursor: pointer;
+}
+
+.toolbarButtons button:hover {
+  background: #e2e8f2;
+  color: #17233c;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 17px;
+  margin: 0 5px;
+  background: #cfd8e6;
+}
+
+.charCount {
+  font-size: 13px;
+  color: #8d9ab0;
+}
+
+.textarea {
+  display: block;
+  width: 100%;
+  min-height: 240px;
+  padding: 18px 22px;
+  border: none;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: #17233c;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+}
+
+.editor:focus-within {
+  border-color: #ffb27d;
+}
+
+.textarea::placeholder {
+  color: #a8b3c6;
+}
+
+.formFooter {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.fitRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.helperText {
+  font-size: 13.5px;
+  color: #7b8aa3;
+}
+
+.formFooter > .primaryButton {
+  align-self: flex-end;
+}
+
+/* ---------------------------------------------------------
+   AI fit panel
+--------------------------------------------------------- */
+
+.fitPanel {
+  margin-top: 18px;
+  padding: 16px 18px;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 10px;
+}
+
+.fitHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.fitLevel {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.fitDismiss {
+  border: none;
+  background: none;
+  font-size: 18px;
+  line-height: 1;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+}
+
+.fitDismiss:hover {
+  opacity: 1;
+}
+
+.fitNote {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #2c3a55;
+}
+
+.fit_strong {
+  background: #eefaf3;
+  border-color: #b6e6cb;
+}
+
+.fit_strong .fitLevel { color: #1a7f4b; }
+
+.fit_partial {
+  background: #fff6ec;
+  border-color: #ffd4ad;
+}
+
+.fit_partial .fitLevel { color: #b45a09; }
+
+.fit_weak {
+  background: #fdf0f1;
+  border-color: #f6c4c7;
+}
+
+.fit_weak .fitLevel { color: #c23b43; }
+
+/* ---------------------------------------------------------
+   Notices (own question / signed out)
+--------------------------------------------------------- */
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 26px 30px;
+  border: 1px solid #e6ebf3;
+  border-left: 4px solid #ff6817;
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.noticeTitle {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.noticeText {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #6b7a93;
+}
+
+.notice .primaryButton {
+  margin-top: 8px;
+}
+
+/* ---------------------------------------------------------
+   Buttons
+--------------------------------------------------------- */
+
+.primaryButton {
+  padding: 11px 22px;
+  border: none;
+  border-radius: 8px;
+  background: #ff6817;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.primaryButton:hover:not(:disabled) {
+  background: #ed5c0d;
+}
+
+.primaryButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 17px;
+  border: 1px solid #e2e8f2;
+  border-radius: 8px;
+  background: #f4f7fb;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4a64;
+  cursor: pointer;
+}
+
+.ghostButton:hover:not(:disabled) {
+  background: #e9eff7;
+}
+
+.ghostButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------
+   Loading / error pages
+--------------------------------------------------------- */
+
+.statusPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 110px 34px;
+  text-align: center;
+  color: #17233c;
+}
+
+.statusText {
+  margin: 0;
+  font-size: 15.5px;
+  color: #5b6b86;
+}
+
+.statusError {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #f2545b;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #e2e8f2;
+  border-top-color: #ff6817;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+}
+
+/* ---------------------------------------------------------
+   Focus
+--------------------------------------------------------- */
+
+.backLink:focus-visible,
+.relatedCard:focus-visible,
+.primaryButton:focus-visible,
+.ghostButton:focus-visible,
+.toolbarButtons button:focus-visible,
+.fitDismiss:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid #ff6817;
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------
+   Responsive
+--------------------------------------------------------- */
+
+@media (max-width: 1020px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .questionCard,
+  .sidebar {
+    grid-column: 1 / -1;
+  }
+
+  .sidebar {
+    order: 3;
+  }
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 16px 50px;
+  }
+
+  .questionCard,
+  .answerCard,
+  .formCard {
+    padding: 22px 18px;
+  }
+
+  .questionTitle {
+    font-size: 24px;
+  }
+
+  .formFooter > .primaryButton {
+    align-self: stretch;
+  }
+}

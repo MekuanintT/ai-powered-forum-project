@@ -7,6 +7,7 @@ import {
   getQuestionsController,
   generateQuestionDraftCoachController,
   assessAnswerAgainstQuestionController,
+   getSingleQuestionController,
 } from '../controller/question.controller.js';
 
 import {
@@ -16,6 +17,7 @@ import {
   getSimilarQuestionsValidation,
   generateQuestionDraftCoachValidation,
   assessAnswerFitValidation,
+  getSingleQuestionValidation, 
 } from '../validations/question.validation.js';
 
 import { authenticateUser } from '../../../middleware/authentication.js';
@@ -93,5 +95,69 @@ router.post(
   assessAnswerFitValidation,
   assessAnswerAgainstQuestionController,
 );
+
+
+
+
+
+
+
+
+
+// Add getSingleQuestionController to the controller import:
+//
+// import {
+//   createQuestionController,
+//   getSimilarQuestionsController,
+//   searchQuestionsSemanticController,
+//   getQuestionsController,
+//   generateQuestionDraftCoachController,
+//   assessAnswerAgainstQuestionController,
+//   getSingleQuestionController,   <-- add this
+// } from '../controller/question.controller.js';
+//
+// Add getSingleQuestionValidation to the validation import:
+//
+// import {
+//   createQuestionValidation,
+//   searchQuestionsValidation,
+//   getQuestionsValidation,
+//   getSimilarQuestionsValidation,
+//   generateQuestionDraftCoachValidation,
+//   assessAnswerFitValidation,
+//   getSingleQuestionValidation,   <-- add this (it already exists in question.validation.js)
+// } from '../validations/question.validation.js';
+//
+// Then add this route. It MUST go after '/search' and '/draft-coach' (it
+// already is, below), and can go before or after the '/:questionHash/similar'
+// and '/:questionHash/answer-fit' routes since those have an extra path
+// segment and won't collide with a bare '/:questionHash' match.
+
+/**
+ * @route GET /api/questions/:questionHash
+ * @desc Get a single question, its author, and its answers
+ * @access Protected
+ */
+router.get(
+  '/:questionHash',
+  authenticateUser,
+  getSingleQuestionValidation,
+  getSingleQuestionController,
+);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export default router;

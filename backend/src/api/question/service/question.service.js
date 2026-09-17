@@ -13,6 +13,87 @@ import {
 const generateQuestionHash = () => crypto.randomBytes(8).toString("hex");
 
 /**
+ * Retrieves a list of questions with optional keyword and ownership filters.
+ *
+ * @param {Object} filters
+ * @param {string} [filters.search] - Optional keyword to search in title or content.
+ * @param {boolean|string} [filters.mine] - When truthy, only return questions by userId.
+ * @param {number} filters.userId - The authenticated user's ID (required for 'mine' filter).
+ * @returns {Promise<Object>} { data: Question[], meta: { limit, total, sortBy, sortOrder } }
+ */
+export const getQuestionsService = async ({ search, mine, userId } = {}) => {
+  const LIMIT = 100;
+  const params = [];
+
+  let whereClauses = [];
+
+  if (mine) {
+    whereClauses.push("q.user_id = ?");
+    params.push(userId);
+  }
+
+  if (search && search.trim()) {
+    const term = `%${search.trim()}%`;
+    whereClauses.push("(q.title LIKE ? OR q.content LIKE ?)");
+    params.push(term, term);
+  }
+
+  const whereSQL =
+    whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+
+  const sql = `
+    SELECT
+      q.question_id  AS id,
+      q.question_hash AS questionHash,
+      q.title,
+      q.content,
+      COUNT(DISTINCT a.answer_id) AS answerCount,
+      q.created_at   AS createdAt,
+      q.updated_at   AS updatedAt,
+      u.user_id      AS authorId,
+      u.first_name   AS authorFirstName,
+      u.last_name    AS authorLastName
+    FROM questions q
+    INNER JOIN users u ON u.user_id = q.user_id
+    LEFT JOIN  answers a ON a.question_id = q.question_id
+    ${whereSQL}
+    GROUP BY
+      q.question_id, q.question_hash, q.title, q.content,
+      q.created_at, q.updated_at,
+      u.user_id, u.first_name, u.last_name
+    ORDER BY q.created_at DESC
+    LIMIT ${LIMIT}
+  `;
+
+  const rows = await safeExecute(sql, params);
+
+  const data = rows.map((row) => ({
+    id: row.id,
+    questionHash: row.questionHash,
+    title: row.title,
+    content: row.content,
+    answerCount: Number(row.answerCount),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    author: {
+      id: row.authorId,
+      firstName: row.authorFirstName,
+      lastName: row.authorLastName,
+    },
+  }));
+
+  return {
+    data,
+    meta: {
+      limit: LIMIT,
+      total: data.length,
+      sortBy: "newest",
+      sortOrder: "desc",
+    },
+  };
+};
+
+/**
  * Creates a new question and stores its vector embedding for semantic search.
  *
  * @param {Object} payload - The question data

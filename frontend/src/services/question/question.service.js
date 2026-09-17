@@ -28,6 +28,37 @@ function handleQuestionError(error, fallbackMessage) {
 }
 
 /**
+ * Fetches a list of questions with optional filters.
+ * @param {{ search?: string, mine?: boolean }} [params]
+ */
+export async function getQuestions(params = {}) {
+  try {
+    const response = await apiClient.get('/api/questions', { params });
+    const payload = response.data;
+    // Support { data: [] } and raw array responses
+    return Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to load questions. Please try again.');
+  }
+}
+
+/**
+ * Performs semantic search for questions.
+ * @param {string} query
+ */
+export async function searchQuestionsSemantic(query) {
+  try {
+    const response = await apiClient.get('/api/questions/search', {
+      params: { query },
+    });
+    const payload = response.data;
+    return Array.isArray(payload?.data) ? payload.data : [];
+  } catch (error) {
+    throw handleQuestionError(error, 'Semantic search failed. Please try again.');
+  }
+}
+
+/**
  * Creates a forum question for the authenticated user.
  * @param {{ title: string, content: string }} question
  */
@@ -69,7 +100,47 @@ export async function generateQuestionDraftCoach(draft) {
   }
 }
 
+/**
+ * Fetches full details (question + answers) for a single question.
+ * @param {string} questionHash - The 16-char hex hash for the question.
+ */
+export async function getSingleQuestion(questionHash) {
+  try {
+    const response = await apiClient.get(`/api/questions/${questionHash}`);
+    const payload = response.data;
+    // Backend returns { success, message, question: {..., answers: [] } }
+    return payload?.question ?? payload?.data ?? payload;
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to load question. Please try again.');
+  }
+}
+
+/**
+ * Evaluates how well a draft answer fits the question using AI.
+ * @param {string} questionHash
+ * @param {string} answerText
+ * @returns {Promise<{ level: 'strong'|'partial'|'weak', note: string }>}
+ */
+export async function assessAnswerFit(questionHash, answerText) {
+  try {
+    const response = await apiClient.post(
+      `/api/questions/${questionHash}/answer-fit`,
+      { answerText },
+    );
+    return getResponseData(response) ?? {};
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'AI fit check is unavailable right now. Please try again.',
+    );
+  }
+}
+
 export const questionService = {
   createQuestion,
+  getQuestions,
+  searchQuestionsSemantic,
   generateQuestionDraftCoach,
+  getSingleQuestion,
+  assessAnswerFit,
 };

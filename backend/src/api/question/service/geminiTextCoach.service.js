@@ -130,3 +130,63 @@ Rules:
     );
   }
 };
+
+/**
+ * Reviews a question draft and returns actionable writing tips.
+ *
+ * @param {string} [title] - Optional draft title.
+ * @param {string} content - Draft question body (required).
+ * @returns {Promise<{ tips: string[] }>}
+ */
+export const generateQuestionDraftCoachService = async (title, content) => {
+  const titleSection = title
+    ? `QUESTION TITLE:\n${title}\n\n`
+    : "";
+
+  const userPrompt = `
+You are an expert technical forum coach for a programming Q&A platform.
+
+${titleSection}QUESTION DRAFT:
+${content}
+
+Review the draft question above and provide 3–5 concise, actionable tips to help the author
+write a clearer, more answerable question. Focus on:
+- Clarity and specificity
+- Whether expected vs actual behaviour is stated
+- Whether a minimal code snippet or error message is included
+- Title accuracy and length
+- Scope (one problem per post)
+
+Reply with ONLY valid JSON (no markdown fences), exactly this shape:
+{
+  "tips": ["Tip one.", "Tip two.", "Tip three."]
+}
+
+Rules:
+- Each tip is a single plain-English sentence under 150 characters.
+- Do not repeat the question back or give filler praise.
+- Do not include markdown, code, or lists inside each tip string.
+`;
+
+  try {
+    const raw = await fetchGeminiJsonTextResponse(userPrompt);
+    const parsed = parseJsonObjectFromGeminiText(raw);
+
+    const rawTips = parsed?.tips;
+    const tips = Array.isArray(rawTips)
+      ? rawTips
+          .filter((t) => typeof t === "string" && t.trim())
+          .map((t) => t.trim().slice(0, 200))
+          .slice(0, 5)
+      : [];
+
+    return { tips };
+  } catch (error) {
+    console.error("generateQuestionDraftCoachService:", error);
+
+    throw new ServiceUnavailableError(
+      "AI draft coach is temporarily unavailable. Please try again later."
+    );
+  }
+};
+

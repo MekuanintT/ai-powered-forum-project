@@ -12,6 +12,7 @@ import Auth from './pages/Auth/Auth';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Landing from './pages/Landing/Landing';
 import PostQuestion from './pages/PostQuestion/PostQuestion';
+import QuestionDetail from './pages/QuestionDetail/QuestionDetail';
 
 function App() {
   return (
@@ -52,7 +53,7 @@ function App() {
               path='/questions/:questionHash'
               element={
                 <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
+                  <QuestionDetail />
                 </ProtectedRoute>
               }
             />
@@ -60,7 +61,7 @@ function App() {
               path='/question/:id'
               element={
                 <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
+                  <QuestionDetail />
                 </ProtectedRoute>
               }
             />

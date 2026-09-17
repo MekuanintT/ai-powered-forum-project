@@ -3,6 +3,7 @@ import { StatusCodes } from 'http-status-codes';
 import {
   createQuestionWithVectorService,
   getSimilarQuestionsService,
+  searchQuestionsSemanticService,
 } from '../service/question.service.js';
 
 /**
@@ -50,6 +51,36 @@ export const getSimilarQuestionsController = async (req, res, next) => {
     res.status(StatusCodes.OK).json({
       success: true,
       data: questions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * Handles semantic search for questions.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const searchQuestionsSemanticController = async (req, res, next) => {
+  try {
+    const { query, k, threshold } = req.query;
+
+    const result = await searchQuestionsSemanticService({
+      query,
+      k,
+      threshold,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Semantic search completed successfully',
+      data: result.data,
+      meta: result.meta,
     });
   } catch (error) {
     next(error);

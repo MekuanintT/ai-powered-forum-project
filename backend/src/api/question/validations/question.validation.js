@@ -20,3 +20,36 @@ export const createQuestionValidation = [
     .trim(),
   validationErrorHandler,
 ];
+
+/**
+ * Validates query parameters for semantic question search.
+ *
+ * query: required, minimum 5 characters
+ * k: optional integer between 1 and 20
+ * threshold: optional float between 0 and 1
+ */
+export const searchQuestionsValidation = [
+  queryParam('query')
+    .exists()
+    .withMessage('Search query is required')
+    .bail()
+    .isString()
+    .withMessage('Search query must be a string')
+    .trim()
+    .isLength({ min: 5 })
+    .withMessage('Search query must be at least 5 characters'),
+
+  queryParam('k')
+    .optional()
+    .isInt({ min: 1, max: 20 })
+    .withMessage('k must be an integer between 1 and 20')
+    .toInt(),
+
+  queryParam('threshold')
+    .optional()
+    .isFloat({ min: 0, max: 1 })
+    .withMessage('threshold must be a number between 0 and 1')
+    .toFloat(),
+
+  validationErrorHandler,
+];

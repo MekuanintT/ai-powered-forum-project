@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon index.js",
+    "dev":  "nodemon --exec \"node --dns-result-order=ipv4first\" index.js",
     "start": "node index.js",
     "test": "node --test"
   },
+
   "keywords": [],
   "author": "",
   "license": "ISC",

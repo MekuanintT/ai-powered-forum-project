@@ -69,7 +69,117 @@ export async function generateQuestionDraftCoach(draft) {
   }
 }
 
+/**
+ * Lists questions, with optional keyword search and "mine" filtering.
+ * @param {{ search?: string, mine?: boolean }} [params]
+ * @returns {Promise<Array>}
+ */
+export async function getQuestions(params = {}) {
+  try {
+    const response = await apiClient.get('/api/questions', { params });
+    return getResponseData(response) ?? [];
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Failed to load questions. Please try again.',
+    );
+  }
+}
+
+/**
+ * Runs an AI-powered semantic search across questions.
+ * @param {string} query
+ * @param {{ k?: number, threshold?: number }} [options]
+ * @returns {Promise<Array>}
+ */
+export async function searchQuestionsSemantic(query, options = {}) {
+  try {
+    const response = await apiClient.get('/api/questions/search', {
+      params: {
+        query,
+        k: options.k,
+        threshold: options.threshold,
+      },
+    });
+    return getResponseData(response) ?? [];
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Failed to run semantic search. Please try again.',
+    );
+  }
+}
+
+/**
+ * Fetches a single question, its author, and all its answers.
+ * @param {string} questionHash
+ * @returns {Promise<{ success: boolean, question: Object, answers: Array, answersMeta: Object }>}
+ */
+export async function getSingleQuestion(questionHash) {
+  try {
+    const response = await apiClient.get(`/api/questions/${questionHash}`);
+    return response.data;
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Failed to load this question. Please try again.',
+    );
+  }
+}
+
+/**
+ * Fetches questions similar to a given question, ranked by AI similarity.
+ * @param {string} questionHash
+ * @param {{ k?: number, threshold?: number }} [options]
+ * @returns {Promise<Array>}
+ */
+export async function getSimilarQuestions(questionHash, options = {}) {
+  try {
+    const response = await apiClient.get(
+      `/api/questions/${questionHash}/similar`,
+      {
+        params: {
+          k: options.k,
+          threshold: options.threshold,
+        },
+      },
+    );
+    return getResponseData(response) ?? [];
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Failed to load similar questions. Please try again.',
+    );
+  }
+}
+
+/**
+ * Asks the AI to assess how well a draft answer fits a specific question.
+ * @param {string} questionHash
+ * @param {string} answerText
+ * @returns {Promise<{ level: 'strong'|'partial'|'weak', note: string }>}
+ */
+export async function assessAnswerFit(questionHash, answerText) {
+  try {
+    const response = await apiClient.post(
+      `/api/questions/${questionHash}/answer-fit`,
+      { answerText },
+    );
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(
+      error,
+      'Unable to assess this answer right now. Please try again.',
+    );
+  }
+}
+
 export const questionService = {
   createQuestion,
   generateQuestionDraftCoach,
+  getQuestions,
+  searchQuestionsSemantic,
+  getSingleQuestion,
+  getSimilarQuestions,
+  assessAnswerFit,
 };

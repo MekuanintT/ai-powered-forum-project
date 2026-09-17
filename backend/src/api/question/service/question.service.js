@@ -270,7 +270,7 @@ export const searchQuestionsSemanticService = async ({
     WHERE status = 'ready'
   `;
 
-  const vectorRows = await safeExecute(vectorSql);
+  const vectorRows = await safeExecute(vectorSql, []);
 
   // 3. Calculate cosine similarity
   const scoredQuestions = vectorRows
@@ -511,6 +511,99 @@ export const getSingteQuestionService = async (
         limit: normalizedAnswerLimit,
         total: answers.length,
       },
+    },
+  };
+};
+
+/**
+ * Lists questions with optional keyword search and "mine" filtering.
+ *
+ * @param {Object} params
+ * @param {string} [params.search] - Optional keyword to match against title or content.
+ * @param {boolean} [params.mine] - When true, restrict results to the given user's own questions.
+ * @param {string|number} [params.userId] - The authenticated user's ID (required when mine is true).
+ * @returns {Promise<Object>} Object containing data and meta.
+ */
+export const getQuestionsService = async ({ search, mine, userId }) => {
+  const conditions = [];
+  const params = [];
+
+  if (mine) {
+    if (!userId) {
+      throw new BadRequestError('User must be authenticated to filter by "mine".');
+    }
+    conditions.push('q.user_id = ?');
+    params.push(userId);
+  }
+
+  if (search) {
+    conditions.push('(q.title LIKE ? OR q.content LIKE ?)');
+    const likeTerm = `%${search}%`;
+    params.push(likeTerm, likeTerm);
+  }
+
+  const whereClause = conditions.length > 0
+    ? `WHERE ${conditions.join(' AND ')}`
+    : '';
+
+  const limit = 100;
+
+  const questionsSql = `
+    SELECT
+      q.question_id AS id,
+      q.question_hash AS questionHash,
+      q.title,
+      q.content,
+      COUNT(DISTINCT a.answer_id) AS answerCount,
+      q.created_at AS createdAt,
+      q.updated_at AS updatedAt,
+      u.user_id AS authorId,
+      u.first_name AS authorFirstName,
+      u.last_name AS authorLastName
+    FROM questions q
+    INNER JOIN users u
+      ON q.user_id = u.user_id
+    LEFT JOIN answers a
+      ON a.question_id = q.question_id
+    ${whereClause}
+    GROUP BY
+      q.question_id,
+      q.question_hash,
+      q.title,
+      q.content,
+      q.created_at,
+      q.updated_at,
+      u.user_id,
+      u.first_name,
+      u.last_name
+    ORDER BY q.created_at DESC
+    LIMIT ${limit}
+  `;
+
+  const rows = await safeExecute(questionsSql, params);
+
+  const data = rows.map((row) => ({
+    id: row.id,
+    questionHash: row.questionHash,
+    title: row.title,
+    content: row.content,
+    answerCount: Number(row.answerCount),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    author: {
+      id: row.authorId,
+      firstName: row.authorFirstName,
+      lastName: row.authorLastName,
+    },
+  }));
+
+  return {
+    data,
+    meta: {
+      limit,
+      total: data.length,
+      sortBy: 'newest',
+      sortOrder: 'desc',
     },
   };
 };

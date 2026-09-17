@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 
 import {
   getQuestions,
-  searchQuestionsSemantic,
+  searchQuestionsSemantic
 } from '../../services/question/question.service';
 
 import { useAuth } from '../../contexts/AuthContext';
@@ -48,12 +48,27 @@ export default function Dashboard() {
     question.questionHash ||
     question.question_hash;
 
-  const getAuthor = (question) =>
-    question.authorName ||
-    question.author ||
-    question.userName ||
-    question.user?.firstName ||
-    'Unknown user';
+  const getAuthor = (question) => {
+    const authorObject = question.author || question.user;
+
+    if (authorObject && typeof authorObject === 'object') {
+      const fullName = [authorObject.firstName, authorObject.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+
+      if (fullName) {
+        return fullName;
+      }
+    }
+
+    return (
+      question.authorName ||
+      (typeof question.author === 'string' ? question.author : null) ||
+      question.userName ||
+      'Unknown user'
+    );
+  };
 
   const getAnswerCount = (question) =>
     question.answerCount ??
@@ -558,13 +573,13 @@ export default function Dashboard() {
                             'Untitled question'}
                         </h3>
 
-                        {question.description && (
+                        {question.content && (
                           <p
                             className={
                               styles.questionExcerpt
                             }
                           >
-                            {question.description}
+                            {question.content}
                           </p>
                         )}
 

@@ -1,132 +1,164 @@
-import { GoogleGenAI } from "@google/genai";
-import { ServiceUnavailableError } from "../../../utils/errors/index.js";
+import { GoogleGenAI } from '@google/genai';
 
-const apiKey = process.env.GEMINI_API_KEY;
+import { safeExecute } from '../../../../db/config.js';
+import { NotFoundError } from '../../../utils/errors/index.js';
 
-const modelName = process.env.GEMINI_TEXT_MODEL || "gemini-2.5-flash-lite";
-
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY environment variable is required");
-}
-
-const ai = new GoogleGenAI({
-  apiKey,
-});
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash-lite';
 
 /**
- * Strip optional markdown fence and parse JSON Object from model text.
+ * Extracts the text content from a Gemini generateContent response,
+ * across a couple of possible response shapes.
  *
- * @param {string} raw
- * @returns {object|null}
+ * @param {Object} response
+ * @returns {string|null}
  */
-function parseJsonObjectFromGeminiText(raw) {
-  if (!raw || typeof raw !== "string") {
+const extractResponseText = (response) => {
+  return (
+    response?.text ??
+    response?.candidates?.[0]?.content?.parts?.[0]?.text ??
+    null
+  );
+};
+
+/**
+ * Attempts to parse a JSON object out of a model response, tolerating
+ * markdown code fences or extra surrounding text.
+ *
+ * @param {string|null} text
+ * @returns {Object|null}
+ */
+const extractJson = (text) => {
+  if (!text) {
     return null;
   }
 
-  let text = raw.trim();
-
-  if (text.startsWith("```")) {
-    text = text.replace(/^```(?:json)?\s*|\s*```$/g, "").trim();
-  }
+  const cleaned = text
+    .trim()
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/i, '')
+    .replace(/```\s*$/i, '');
 
   try {
-    const value = JSON.parse(text);
-
-    return typeof value === "object" && value !== null && !Array.isArray(value)
-      ? value
-      : null;
+    return JSON.parse(cleaned);
   } catch {
-    return null;
+    const match = cleaned.match(/\{[\s\S]*\}/);
+
+    if (!match) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
   }
-}
-
-async function fetchGeminiJsonTextResponse(userPrompt) {
-  try {
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: userPrompt,
-      config: {
-        maxOutputTokens: 300,
-      },
-    });
-
-    console.log(response);
-
-    const text = response.text;
-
-    return typeof text === "string" ? text : "";
-  } catch (error) {
-    console.error("fetchGeminiJsonTextResponse:", error);
-
-    throw new ServiceUnavailableError(
-      "AI service is temporarily unavailable. Please try again later."
-    );
-  }
-}
+};
 
 /**
- * Whether a draft answer seems to address the question (relevance, not correctness).
+ * Generates AI coaching tips for a draft question before it's posted.
  *
- * @param questionTitle: string
- * @param questionContent: string
- * @param answerText: string
- * @returns level: string; note: string
+ * @param {Object} params
+ * @param {string} [params.title] - Draft question title.
+ * @param {string} params.content - Draft question content.
+ * @returns {Promise<Object>} Object containing a `tips` array.
  */
-export const assessAnswerAgainstQuestionService = async (
-  questionTitle,
-  questionContent,
-  answerText
-) => {
-  const userPrompt = `
-QUESTION TITLE:
-${questionTitle}
+export const generateQuestionDraftCoachService = async ({ title, content }) => {
+  const prompt = `You are an expert programming forum moderator coaching a learner on how to write a clear, well-formed technical question that other developers can answer quickly.
 
-QUESTION BODY:
-${questionContent}
+Draft title: ${title || '(no title provided)'}
+Draft content:
+${content}
 
-ANSWER DRAFT:
+Review the draft for clarity, completeness, and formatting. Consider whether it states what the person is trying to do, what they expected, what actually happened, and whether relevant code/error messages/environment details are included.
+
+Respond with ONLY valid JSON in this exact shape, with no markdown code fences and no commentary outside the JSON:
+{"tips": ["short actionable tip", "short actionable tip"]}
+
+Provide between 2 and 5 specific, actionable tips.`;
+
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+  });
+
+  const parsed = extractJson(extractResponseText(response));
+
+  if (!parsed || !Array.isArray(parsed.tips) || parsed.tips.length === 0) {
+    return {
+      tips: [
+        'Describe what you expected to happen versus what actually happened.',
+        'Include relevant code snippets, error messages, and environment details.',
+      ],
+    };
+  }
+
+  return { tips: parsed.tips };
+};
+
+/**
+ * Assesses how well a draft answer addresses a specific question, using AI.
+ *
+ * @param {Object} params
+ * @param {string} params.questionHash - Hash of the question being answered.
+ * @param {string} params.answerText - Draft answer content.
+ * @returns {Promise<Object>} Object containing `level` and `note`.
+ */
+export const assessAnswerAgainstQuestionService = async ({
+  questionHash,
+  answerText,
+}) => {
+  const questionSql = `
+    SELECT
+      question_id,
+      title,
+      content
+    FROM questions
+    WHERE question_hash = ?
+    LIMIT 1
+  `;
+
+  const rows = await safeExecute(questionSql, [questionHash]);
+
+  if (!rows || rows.length === 0) {
+    throw new NotFoundError('Question not found.');
+  }
+
+  const question = rows[0];
+
+  const prompt = `You are evaluating how well a draft forum answer addresses a technical question. Be concise and fair, and judge relevance only — not whether the answer is technically correct.
+
+Question title: ${question.title}
+Question content:
+${question.content}
+
+Draft answer:
 ${answerText}
 
-Review whether a forum ANSWER draft addresses the QUESTION (relevance and completeness of engagement
-— not whether the answer is factually correct).
+Respond with ONLY valid JSON in this exact shape, with no markdown code fences and no commentary outside the JSON:
+{"level": "strong", "note": "one or two sentence explanation of the assessment"}
 
-Reply with ONLY valid JSON (no markdown fences), exactly this shape:
-{
-  "level": "strong" | "partial" | "weak",
-  "note": "one short sentence"
-}
+"level" must be exactly one of: "strong", "partial", "weak".`;
 
-Rules:
-- "strong" if the draft clearly engages with the question;
-- "partial" if somewhat related but missing key parts of the ask;
-- "weak" if mostly off-topic or too vague.
-- note: one sentence, plain language, no markdown, under 200 characters.
-- Frame as fit/relevance, not grading.
-`;
+  const response = await ai.models.generateContent({
+    model: TEXT_MODEL,
+    contents: prompt,
+  });
 
-  try {
-    const raw = await fetchGeminiJsonTextResponse(userPrompt);
-    const parsed = parseJsonObjectFromGeminiText(raw);
+  const parsed = extractJson(extractResponseText(response));
 
-    const levelRaw = parsed.level;
-    const noteRaw = parsed.note;
+  const allowedLevels = ['strong', 'partial', 'weak'];
 
-    const level = ["strong", "partial", "weak"].includes(levelRaw)
-      ? levelRaw
-      : "partial";
-
-    const note =
-      typeof noteRaw === "string" && noteRaw.trim()
-        ? noteRaw.trim().slice(0, 200)
-        : "Could not summarize fit; treat this as a partial match.";
-
-    return { level, note };
-  } catch (error) {
-    console.error("assessAnswerAgainstQuestionService:", error);
-
-    throw new ServiceUnavailableError(
-      "AI fit check is temporarily unavailable. Please try again later."
-    );
+  if (!parsed || !allowedLevels.includes(parsed.level) || !parsed.note) {
+    return {
+      level: 'partial',
+      note: 'We could not fully assess this answer automatically. Consider reviewing it manually before posting.',
+    };
   }
+
+  return {
+    level: parsed.level,
+    note: parsed.note,
+  };
 };

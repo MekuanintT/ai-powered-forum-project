@@ -5,6 +5,7 @@ import {
   getSimilarQuestionsService,
   searchQuestionsSemanticService,
   getQuestionsService,
+  getSingleQuestionService, 
 } from '../service/question.service.js';
 
 import {
@@ -167,6 +168,50 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
       success: true,
       message: 'Answer fit assessed',
       data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+
+
+
+// Add this import alongside the existing ones from question.service.js:
+//
+// import {
+//   createQuestionWithVectorService,
+//   getSimilarQuestionsService,
+//   searchQuestionsSemanticService,
+//   getQuestionsService,
+//   getSingleQuestionService,   <-- add this
+// } from '../service/question.service.js';
+
+/**
+ * Handles retrieving a single question, its author, and its answers.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const getSingleQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+
+    const { question, answers, answersMeta } =
+      await getSingleQuestionService(questionHash);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Question fetched successfully',
+      question,
+      answers,
+      answersMeta,
     });
   } catch (error) {
     next(error);

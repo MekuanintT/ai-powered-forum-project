@@ -13,6 +13,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import Landing from './pages/Landing/Landing';
 import PostQuestion from './pages/PostQuestion/PostQuestion';
 import MyQuestions from './pages/MyQuestions/MyQuestions';
+import QuestionDetail from './pages/QuestionDetail/QuestionDetail';
 
 function App() {
   return (
@@ -33,6 +34,12 @@ function App() {
                 </ProtectedRoute>
               }
             />
+
+
+<Route path="/questions/:questionHash" element={<QuestionDetail />} />
+
+
+
             <Route
               path='/questions/ask'
               element={

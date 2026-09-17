@@ -286,7 +286,7 @@ export default function Dashboard() {
           <button
             type="button"
             className={styles.actionCard}
-            onClick={() => navigate('/questions/new')}
+            onClick={() => navigate('/questions/ask')}
           >
             <span className={styles.actionIcon}>
               ✎
@@ -305,7 +305,7 @@ export default function Dashboard() {
           <button
             type="button"
             className={styles.actionCard}
-            onClick={() => navigate('/topics')}
+            onClick={() => navigate('/my-questions')}
           >
             <span className={styles.actionIcon}>
               ║
@@ -324,7 +324,7 @@ export default function Dashboard() {
           <button
             type="button"
             className={styles.actionCard}
-            onClick={() => navigate('/knowledge-base')}
+            onClick={() => navigate('/rag-documents')}
           >
             <span className={styles.actionIcon}>
               ♧
@@ -502,7 +502,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate('/questions/new')
+                    navigate('/questions/ask')
                   }
                   className={styles.newQuestionButton}
                 >

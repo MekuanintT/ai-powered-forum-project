@@ -40,7 +40,7 @@ This document provides a consolidated, milestone-by-milestone breakdown of all f
 | T-11 | Semantic Search Questions | Damtew | Implement `GET /api/questions/search` to find conceptually related questions using AI vector cosine similarity. | `/question/search-questions.md` |
 | T-11 | Find Similar Questions | Yonatan | Implement `GET /api/questions/:questionHash/similar` to recommend related questions based on an existing question's vector. | `/question/similar-questions.md` |
 | T-12 | Create Answer | Mekuanint | Implement `POST /api/answers` to allow users to answer community questions (preventing them from answering their own). | `/answer/create-answer.md` |
-| T-17 | AI Question Draft Coach | Ermi | Implement `POST /api/questions/draft-coach` to provide real-time AI feedback and tips on question drafts. | `/question/draft-coach.md` |
+| T-17 | AI Question Draft Coach | Sosi | Implement `POST /api/questions/draft-coach` to provide real-time AI feedback and tips on question drafts. | `/question/draft-coach.md` |
 | T-18 | AI Answer Fit Evaluation | Ibrahim | Implement `POST /api/questions/:questionHash/answer-fit` to evaluate how strongly a draft answer addresses the question. | `/question/answer-fit.md` |
 
 ### Frontend Tasks

@@ -609,9 +609,6 @@ export const getQuestionsService = async ({ search, mine, userId }) => {
 };
 
 
-
-
-
 /**
  * Fetches a single question, its author, and its answers by hash.
  *

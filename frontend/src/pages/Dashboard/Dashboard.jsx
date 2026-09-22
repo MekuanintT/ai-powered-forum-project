@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
   getQuestions,
@@ -12,6 +12,7 @@ import styles from './Dashboard.module.css';
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [questions, setQuestions] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -159,29 +160,37 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    loadQuestions();
-  }, []);
+    const keywordQuery = searchParams.get('q');
+    const semanticQuery = searchParams.get('semantic');
+
+    if (semanticQuery) {
+      setSearchQuery(semanticQuery);
+      setSearchMode('semantic');
+      runSearch(semanticQuery, 'semantic');
+    } else if (keywordQuery) {
+      setSearchQuery(keywordQuery);
+      setSearchMode('keyword');
+      runSearch(keywordQuery, 'keyword');
+    } else {
+      setSearchQuery('');
+      loadQuestions();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   /*
-   * Search
+   * Run a search against the API for a given query/mode. Shared by both
+   * the URL-driven effect above (Navbar-triggered search) and the
+   * Dashboard's own inline search form.
    */
-  const handleSearch = async (event) => {
-    event.preventDefault();
-
-    const query = searchQuery.trim();
-
-    if (!query) {
-      await loadQuestions();
-      return;
-    }
-
+  const runSearch = async (query, mode) => {
     try {
       setIsLoading(true);
       setError('');
 
       let data;
 
-      if (searchMode === 'semantic') {
+      if (mode === 'semantic') {
         data = await searchQuestionsSemantic(query);
       } else {
         data = await getQuestions({
@@ -198,6 +207,22 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  /*
+   * Search
+   */
+  const handleSearch = async (event) => {
+    event.preventDefault();
+
+    const query = searchQuery.trim();
+
+    if (!query) {
+      await loadQuestions();
+      return;
+    }
+
+    await runSearch(query, searchMode);
   };
 
   /*

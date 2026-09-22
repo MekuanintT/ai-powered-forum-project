@@ -175,12 +175,6 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
 };
 
 
-
-
-
-
-
-
 // Add this import alongside the existing ones from question.service.js:
 //
 // import {

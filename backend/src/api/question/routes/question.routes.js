@@ -22,6 +22,7 @@ import {
 
 import { authenticateUser } from '../../../middleware/authentication.js';
 
+
 const router = express.Router();
 
 /**
@@ -95,43 +96,6 @@ router.post(
   assessAnswerFitValidation,
   assessAnswerAgainstQuestionController,
 );
-
-
-
-
-
-
-
-
-
-// Add getSingleQuestionController to the controller import:
-//
-// import {
-//   createQuestionController,
-//   getSimilarQuestionsController,
-//   searchQuestionsSemanticController,
-//   getQuestionsController,
-//   generateQuestionDraftCoachController,
-//   assessAnswerAgainstQuestionController,
-//   getSingleQuestionController,   <-- add this
-// } from '../controller/question.controller.js';
-//
-// Add getSingleQuestionValidation to the validation import:
-//
-// import {
-//   createQuestionValidation,
-//   searchQuestionsValidation,
-//   getQuestionsValidation,
-//   getSimilarQuestionsValidation,
-//   generateQuestionDraftCoachValidation,
-//   assessAnswerFitValidation,
-//   getSingleQuestionValidation,   <-- add this (it already exists in question.validation.js)
-// } from '../validations/question.validation.js';
-//
-// Then add this route. It MUST go after '/search' and '/draft-coach' (it
-// already is, below), and can go before or after the '/:questionHash/similar'
-// and '/:questionHash/answer-fit' routes since those have an extra path
-// segment and won't collide with a bare '/:questionHash' match.
 
 /**
  * @route GET /api/questions/:questionHash

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { StatusCodes } from 'http-status-codes';
 import {
   queryDocumentService,
@@ -61,4 +62,38 @@ export const getDocumentMetaController = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
+};
+/**libra */
+/**
+ * Handles downloading a specific RAG document owned by the authenticated user.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const getDocumentFileController = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+
+    const document = await getDocumentMetaService(
+      Number(documentId),
+      req.user.id,
+    );
+
+    const filePath = path.resolve(
+      process.env.RAG_UPLOAD_DIR || 'uploads/rag',
+      document.storage_path,
+    );
+
+    res.type('application/pdf');
+    res.sendFile(filePath, error => {
+      if (error && !res.headersSent) {
+        next(error);
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+/**libra end */

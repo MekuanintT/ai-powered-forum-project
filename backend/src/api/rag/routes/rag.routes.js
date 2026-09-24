@@ -3,14 +3,22 @@ import { authenticateUser } from '../../../middleware/authentication.js';
 import {
   queryDocumentController,
   getDocumentMetaController,
+  getDocumentFileController,
 } from '../controller/rag.controller.js';
 import {
   queryDocumentValidation,
   documentIdParamValidation,
 } from '../validations/rag.validation.js';
-
+/**libra */
 const router = express.Router();
 
+router.get(
+  '/:documentId/file',
+  authenticateUser,
+  documentIdParamValidation,
+  getDocumentFileController,
+);
+/*libra end
 /**
  * @route GET /api/rag/documents/:documentId
  * @desc Fetch metadata for a specific RAG document owned by the authenticated user
@@ -30,4 +38,4 @@ router.post(
   queryDocumentController,
 );
 
-export default router;
+export default router;

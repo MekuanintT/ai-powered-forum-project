@@ -1,28 +1,35 @@
 import express from 'express';
+
 import { authenticateUser } from '../../../middleware/authentication.js';
+
 import {
   queryDocumentController,
   getDocumentMetaController,
   getDocumentFileController,
+  deleteDocumentController,
 } from '../controller/rag.controller.js';
+
 import {
   queryDocumentValidation,
   documentIdParamValidation,
 } from '../validations/rag.validation.js';
-/**libra */
+
 const router = express.Router();
 
+/**
+ * GET /api/rag/documents/:documentId/file
+ * Download a RAG document.
+ */
 router.get(
   '/:documentId/file',
   authenticateUser,
   documentIdParamValidation,
   getDocumentFileController,
 );
-/*libra end
+
 /**
- * @route GET /api/rag/documents/:documentId
- * @desc Fetch metadata for a specific RAG document owned by the authenticated user
- * @access Protected
+ * GET /api/rag/documents/:documentId
+ * Get document metadata.
  */
 router.get(
   '/:documentId',
@@ -31,11 +38,26 @@ router.get(
   getDocumentMetaController,
 );
 
+/**
+ * POST /api/rag/documents/:documentId/query
+ * Query a RAG document using AI.
+ */
 router.post(
   '/:documentId/query',
   authenticateUser,
   queryDocumentValidation,
   queryDocumentController,
+);
+
+/**
+ * DELETE /api/rag/documents/:documentId
+ * Delete a RAG document.
+ */
+router.delete(
+  '/:documentId',
+  authenticateUser,
+  documentIdParamValidation,
+  deleteDocumentController,
 );
 
 export default router;

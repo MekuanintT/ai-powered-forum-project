@@ -4,6 +4,8 @@ import { safeExecute } from '../../../../db/config.js';
 import { GoogleGenAI } from '@google/genai';
 import { answerFromRagChunksService } from './ragTextCoach.service.js';
 import { NotFoundError } from '../../../utils/errors/index.js';
+import { unlink } from 'node:fs/promises';
+import path from 'node:path';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const RAG_EMBEDDING_MODEL =
@@ -204,4 +206,88 @@ export const getDocumentMetaService = async (documentId, userId) => {
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
-};
+};
+
+/**
+ * Deletes a RAG document owned by the authenticated user.
+ *
+ * The PDF file is removed from disk first. Then the document
+ * record is deleted from the database.
+ *
+ * Because the database uses ON DELETE CASCADE:
+ * - document chunks are deleted automatically
+ * - chunk vectors are deleted automatically
+ *
+ * @param {Object} params
+ * @param {number} params.documentId
+ * @param {number} params.userId
+ * @returns {Promise<Object>}
+ * @throws {NotFoundError}
+ */
+export const deleteDocumentService = async ({ documentId, userId }) => {
+  // 1. Find the document and verify ownership.
+  const selectSql = `
+    SELECT
+      document_id,
+      user_id,
+      storage_path
+    FROM documents
+    WHERE document_id = ?
+      AND user_id = ?
+    LIMIT 1
+  `;
+
+  const rows = await safeExecute(selectSql, [
+    documentId,
+    userId,
+  ]);
+
+  // Document doesn't exist or belongs to another user.
+  if (!rows || rows.length === 0) {
+    throw new NotFoundError('Document not found.');
+  }
+
+  const document = rows[0];
+
+  // 2. Build the absolute path to the PDF.
+  const uploadDir =
+    process.env.RAG_UPLOAD_DIR || 'uploads/rag';
+
+  const filePath = path.resolve(
+    uploadDir,
+    document.storage_path,
+  );
+
+  // 3. Delete the PDF from disk.
+  //
+  // If the file is already missing, we still continue
+  // because the database record should be removed.
+  try {
+    await unlink(filePath);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  // 4. Delete the document from the database.
+  //
+  // ON DELETE CASCADE automatically deletes:
+  // document_chunks
+  // document_chunk_vectors
+  const deleteSql = `
+    DELETE FROM documents
+    WHERE document_id = ?
+      AND user_id = ?
+  `;
+
+  await safeExecute(deleteSql, [
+    documentId,
+    userId,
+  ]);
+
+  // 5. Return the deleted document ID.
+  return {
+    id: Number(documentId),
+  };
+};

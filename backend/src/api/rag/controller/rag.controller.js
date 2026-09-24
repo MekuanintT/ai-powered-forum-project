@@ -3,30 +3,29 @@ import { StatusCodes } from 'http-status-codes';
 import {
   queryDocumentService,
   getDocumentMetaService,
+  deleteDocumentService,
 } from '../service/rag.service.js';
 
-// **
-//  * Handles answering a user's query using AI, grounded in a specific
-//  * RAG document's content.
-//  *
-//  * @param {import('express').Request} req - The Express request object.
-//  * @param {import('express').Response} res - The Express response object.
-//  * @param {import('express').NextFunction} next - The Express next function.
-//  * @returns {Promise<void>}
-//  */
-
-
+/**
+ * Handles answering a user's query using AI, grounded in a specific
+ * RAG document's content.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ * @returns {Promise<void>}
+ */
 export const queryDocumentController = async (req, res, next) => {
   try {
     const { documentId } = req.params;
     const { query } = req.body;
- 
+
     const data = await queryDocumentService({
       documentId,
       query,
       userId: req.user.id,
     });
- 
+
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Answer and citations',
@@ -39,11 +38,6 @@ export const queryDocumentController = async (req, res, next) => {
 
 /**
  * Handles fetching metadata for a specific RAG document.
- *
- * @param {import('express').Request} req - The Express request object.
- * @param {import('express').Response} res - The Express response object.
- * @param {import('express').NextFunction} next - The Express next function.
- * @returns {Promise<void>}
  */
 export const getDocumentMetaController = async (req, res, next) => {
   try {
@@ -63,14 +57,10 @@ export const getDocumentMetaController = async (req, res, next) => {
     next(error);
   }
 };
-/**libra */
+
 /**
- * Handles downloading a specific RAG document owned by the authenticated user.
- *
- * @param {import('express').Request} req - The Express request object.
- * @param {import('express').Response} res - The Express response object.
- * @param {import('express').NextFunction} next - The Express next function.
- * @returns {Promise<void>}
+ * Handles downloading a specific RAG document owned by
+ * the authenticated user.
  */
 export const getDocumentFileController = async (req, res, next) => {
   try {
@@ -87,6 +77,7 @@ export const getDocumentFileController = async (req, res, next) => {
     );
 
     res.type('application/pdf');
+
     res.sendFile(filePath, error => {
       if (error && !res.headersSent) {
         next(error);
@@ -96,4 +87,25 @@ export const getDocumentFileController = async (req, res, next) => {
     next(error);
   }
 };
-/**libra end */
+
+/**
+ * Handles deleting a RAG document owned by the authenticated user.
+ */
+export const deleteDocumentController = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+
+    const data = await deleteDocumentService({
+      documentId: Number(documentId),
+      userId: req.user.id,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Document deleted successfully.',
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

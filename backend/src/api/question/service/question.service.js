@@ -52,7 +52,7 @@ export const createQuestionWithVectorService = async (payload) => {
     id: questionId,
     questionHash,
     title,
-    content,
+    content,  
     userId,
   };
 

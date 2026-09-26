@@ -1,17 +1,27 @@
 import express from 'express';
 
 import { authenticateUser } from '../../../middleware/authentication.js';
+import { unlink } from 'node:fs/promises';
 
 import {
   queryDocumentController,
   getDocumentMetaController,
   getDocumentFileController,
   deleteDocumentController,
+  createDocumentController,
+  listDocumentsController,
+  searchDocumentController,
 } from '../controller/rag.controller.js';
+
+import {
+    uploadRagDocument,
+     createDocumentMulterErrorHandler,
+} from '../config/rag.upload.config.js'
 
 import {
   queryDocumentValidation,
   documentIdParamValidation,
+  searchInDocumentValidation,
 } from '../validations/rag.validation.js';
 
 const router = express.Router();
@@ -58,6 +68,30 @@ router.delete(
   authenticateUser,
   documentIdParamValidation,
   deleteDocumentController,
+);
+
+router.post(
+  '/',
+  authenticateUser,
+  uploadRagDocument,
+  createDocumentMulterErrorHandler,
+  createDocumentController,
+);
+
+
+
+router.get(
+  '/',
+  authenticateUser,
+  listDocumentsController,
+);
+
+
+router.get(
+  '/:documentId/search',
+  authenticateUser,
+  searchInDocumentValidation,
+  searchDocumentController,
 );
 
 export default router;

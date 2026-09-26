@@ -2,8 +2,11 @@ import path from 'node:path';
 import { StatusCodes } from 'http-status-codes';
 import {
   queryDocumentService,
+  createDocumentFromUploadService,
   getDocumentMetaService,
   deleteDocumentService,
+  listDocumentsForUserService,
+  searchInDocumentService,
 } from '../service/rag.service.js';
 
 /**
@@ -58,6 +61,30 @@ export const getDocumentMetaController = async (req, res, next) => {
   }
 };
 
+
+
+
+export const createDocumentController = async (req, res, next) => {
+  try {
+    const document = await createDocumentFromUploadService({
+      file: req.file,
+      userId: req.user.id,
+    });
+
+    res.status(StatusCodes.CREATED).json({
+      success: true,
+      message: 'Document uploaded and processed.',
+      data: document,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
 /**
  * Handles downloading a specific RAG document owned by
  * the authenticated user.
@@ -104,6 +131,62 @@ export const deleteDocumentController = async (req, res, next) => {
       success: true,
       message: 'Document deleted successfully.',
       data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+/**
+ * Handles listing all RAG documents belonging to the authenticated user.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const listDocumentsController = async (req, res, next) => {
+  try {
+    const documents = await listDocumentsForUserService(req.user.id);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Documents fetched successfully.',
+      data: documents,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+
+
+/**
+ * Handles semantic search within a single RAG document.
+ */
+export const searchDocumentController = async (req, res, next) => {
+  try {
+    const { documentId } = req.params;
+    const { query, k, threshold } = req.query;
+
+    const result = await searchInDocumentService({
+      documentId,
+      query,
+      userId: req.user.id,
+      k,
+      threshold,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Search completed successfully.',
+      data: result.data,
+      meta: result.meta,
     });
   } catch (error) {
     next(error);

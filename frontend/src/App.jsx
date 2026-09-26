@@ -3,17 +3,18 @@
  * Add new `<Route>` entries here, then wire navigation in `Sidebar.jsx` and
  * `Layout.jsx` (`getTitle` / `getSubtitle`) so the shell stays in sync.
  */
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/Layout/Layout';
-import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
-import Auth from './pages/Auth/Auth';
-import Dashboard from './pages/Dashboard/Dashboard';
-import Landing from './pages/Landing/Landing';
-import PostQuestion from './pages/PostQuestion/PostQuestion';
-import MyQuestions from './pages/MyQuestions/MyQuestions';
-import QuestionDetail from './pages/QuestionDetail/QuestionDetail';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import Layout from "./components/Layout/Layout";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import Auth from "./pages/Auth/Auth";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Landing from "./pages/Landing/Landing";
+import PostQuestion from "./pages/PostQuestion/PostQuestion";
+import MyQuestions from "./pages/MyQuestions/MyQuestions";
+import QuestionDetail from "./pages/QuestionDetail/QuestionDetail";
+import RagDocuments from "./pages/RagDocuments/RagDocuments";
 
 function App() {
   return (
@@ -21,13 +22,13 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public routes */}
-          <Route path='/' element={<Landing />} />
-          <Route path='/auth' element={<Auth />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/auth" element={<Auth />} />
 
           {/* Protected routes with Layout */}
           <Route element={<Layout />}>
             <Route
-              path='/dashboard'
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <Dashboard />
@@ -35,13 +36,13 @@ function App() {
               }
             />
 
-
-<Route path="/questions/:questionHash" element={<QuestionDetail />} />
-
-
+            <Route
+              path="/questions/:questionHash"
+              element={<QuestionDetail />}
+            />
 
             <Route
-              path='/questions/ask'
+              path="/questions/ask"
               element={
                 <ProtectedRoute>
                   <PostQuestion />
@@ -49,41 +50,28 @@ function App() {
               }
             />
             <Route
-              path='/my-questions'
+              path="/my-questions"
               element={
                 <ProtectedRoute>
                   <MyQuestions />
                 </ProtectedRoute>
               }
             />
-            <Route
-              path='/questions/:questionHash'
-              element={
-                <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path='/question/:id'
-              element={
-                <ProtectedRoute>
-                  <h1>Question Detail Page</h1>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path='/rag-documents'
-              element={
-                <ProtectedRoute>
-                  <h1>RAG Documents Page</h1>
-                </ProtectedRoute>
-              }
-            />
+            <Route 
+            path="/rag-documents" 
+            element={
+              <ProtectedRoute>
+            <RagDocuments />
+            </ProtectedRoute>} />
           </Route>
 
           {/* Catch-all redirect */}
-          <Route path='*' element={<Navigate to='/' replace />} />
+          <Route 
+          path="*" 
+          element={
+          <ProtectedRoute>
+            <Navigate to="/" replace />
+          </ProtectedRoute>} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

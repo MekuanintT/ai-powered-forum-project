@@ -521,12 +521,15 @@ export const deleteDocumentService = async ({ documentId, userId }) => {
  * @returns {Promise<Array>}
  */
 export const listDocumentsForUserService = async (userId) => {
-  const rows = await safeExecute(
+  // Return document metadata only for this user, with the newest uploads first.
+  return safeExecute(
     `
       SELECT
         document_id,
+        user_id,
         title,
         mime_type,
+        storage_path,
         byte_size,
         status,
         error_message,
@@ -538,8 +541,6 @@ export const listDocumentsForUserService = async (userId) => {
     `,
     [userId],
   );
-
-  return rows;
 };
 
 

@@ -150,12 +150,13 @@ export const deleteDocumentController = async (req, res, next) => {
  */
 export const listDocumentsController = async (req, res, next) => {
   try {
-    const documents = await listDocumentsForUserService(req.user.id);
+    // Restrict the library response to documents owned by the signed-in user.
+    const data = await listDocumentsForUserService(req.user.id);
 
     res.status(StatusCodes.OK).json({
       success: true,
       message: 'Documents fetched successfully.',
-      data: documents,
+      data,
     });
   } catch (error) {
     next(error);

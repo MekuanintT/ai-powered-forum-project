@@ -33,7 +33,9 @@ function handleRagError(error, fallbackMessage) {
  */
 export async function listDocuments() {
   try {
+    // Request the authenticated user's document library from the existing endpoint.
     const response = await apiClient.get('/api/rag/documents');
+    // Unwrap the API envelope and use an empty list when no documents exist.
     return getResponseData(response) ?? [];
   } catch (error) {
     throw handleRagError(error, 'Could not load documents.');

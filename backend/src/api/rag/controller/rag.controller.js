@@ -103,7 +103,7 @@ export const getDocumentFileController = async (req, res, next) => {
       document.storage_path,
     );
 
-    res.type('application/pdf');
+    res.type(document.mime_type || 'application/pdf');
 
     res.sendFile(filePath, error => {
       if (error && !res.headersSent) {

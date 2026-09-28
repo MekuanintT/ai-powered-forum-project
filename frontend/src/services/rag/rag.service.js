@@ -41,20 +41,21 @@ export async function listDocuments() {
 }
 
 /**
- * Uploads a PDF file to be processed and indexed.
+ * Uploads a PDF or TXT file to be processed and indexed.
  * @param {File} file
  * @returns {Promise<Object>} The created document record.
  */
-export async function uploadPdf(file) {
+export async function uploadDocument(file) {
   try {
-    const formData = new FormData();
-    formData.append('file', file);
+    const formData = new FormData(); // Build the multipart request body for the uploaded file.
+    formData.append('file', file); // Match the backend's expected Multer field name.
 
-    const response = await apiClient.post('/api/rag/documents', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+    const response = await apiClient.post('/api/rag/documents', formData, { // Send the file to the existing RAG upload endpoint.
+      headers: { 'Content-Type': 'multipart/form-data' }, // Send the file as multipart form data.
+      timeout: 120000, // Allow time for extraction, chunking, and embedding.
     });
 
-    return getResponseData(response);
+    return getResponseData(response); // Return the created document record to the screen.
   } catch (error) {
     throw handleRagError(error, 'Failed to upload document.');
   }
@@ -126,19 +127,19 @@ export async function queryDocument(documentId, query) {
 }
 
 /**
- * Fetches the raw PDF bytes for a document and returns a blob object URL
+ * Fetches the raw document bytes and returns a blob object URL
  * suitable for an <iframe src="..."> preview. Caller is responsible for
  * calling URL.revokeObjectURL on the returned string when done with it.
  * @param {number|string} documentId
  * @returns {Promise<string>}
  */
-export async function fetchPdfObjectUrl(documentId) {
+export async function fetchPdfObjectUrl(documentId, mimeType = 'application/pdf') {
   try {
     const response = await apiClient.get(
       `/api/rag/documents/${documentId}/file`,
       { responseType: 'blob' },
     );
-    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const blob = new Blob([response.data], { type: mimeType });
     return URL.createObjectURL(blob);
   } catch (error) {
     throw handleRagError(error, 'Failed to load document preview.');
@@ -147,7 +148,7 @@ export async function fetchPdfObjectUrl(documentId) {
 
 export const ragService = {
   listDocuments,
-  uploadPdf,
+  uploadDocument,
   getDocumentMeta,
   deleteDocument,
   searchInDocument,

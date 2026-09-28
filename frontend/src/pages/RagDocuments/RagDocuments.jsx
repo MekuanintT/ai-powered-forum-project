@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import {
   listDocuments,
-  uploadPdf,
+  uploadDocument,
   getDocumentMeta,
   deleteDocument,
   searchInDocument,
@@ -108,7 +108,7 @@ export default function RagDocuments() {
       setIsUploading(true);
       setUploadError('');
 
-      const newDocument = await uploadPdf(selectedFile);
+      const newDocument = await uploadDocument(selectedFile);
 
       setDocuments((prev) => [newDocument, ...prev]);
       setSelectedFile(null);
@@ -219,7 +219,10 @@ export default function RagDocuments() {
     const loadPreview = async () => {
       try {
         setIsPreviewLoading(true);
-        const url = await fetchPdfObjectUrl(activeDocument.document_id);
+        const url = await fetchPdfObjectUrl(
+          activeDocument.document_id,
+          activeDocument.mime_type,
+        );
         if (!cancelled) {
           setPreviewUrl(url);
         } else {
@@ -295,9 +298,10 @@ export default function RagDocuments() {
       {/* Header */}
       <section className={styles.headerCard}>
         <div className={styles.eyebrow}>KNOWLEDGE BASE</div>
-        <h1>Private PDF library</h1>
+        <h1>Private document library</h1>
         <p className={styles.headerDescription}>
-          Upload study or reference PDFs to your own workspace. Each file is
+          Upload study or reference PDFs and TXT files to your own workspace.
+          Each file is
           indexed for semantic search and optional AI answers that cite
           passages from that document only. File size limits apply on the
           server; other users never see your uploads.
@@ -314,12 +318,12 @@ export default function RagDocuments() {
         <section className={styles.libraryCard}>
           <h2>Library</h2>
           <p className={styles.cardSubtitle}>
-            Add PDFs here. Processing runs once per upload.
+            Add PDFs or TXT files here. Processing runs once per upload.
           </p>
 
           <div className={styles.dropzone}>
             <p className={styles.dropzoneHint}>
-              Accepted format: PDF. Maximum file size is enforced by the
+              Accepted formats: PDF and TXT. Maximum file size is enforced by the
               server.
             </p>
 
@@ -335,7 +339,7 @@ export default function RagDocuments() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept=".pdf,.txt,application/pdf,text/plain"
                 onChange={handleChooseFile}
                 className={styles.hiddenInput}
               />
@@ -376,7 +380,8 @@ export default function RagDocuments() {
 
           {!isLoadingList && !listError && documents.length === 0 && (
             <p className={styles.mutedText}>
-              Your library is empty. Upload a PDF to index it for search and
+              Your library is empty. Upload a PDF or TXT file to index it for
+              search and
               Q&amp;A.
             </p>
           )}
@@ -455,7 +460,7 @@ export default function RagDocuments() {
               <div className={styles.readerHeader}>
                 <h2>Reader</h2>
                 <p className={styles.cardSubtitle}>
-                  Inline preview of the selected PDF.
+                  Inline preview of the selected document.
                 </p>
               </div>
 
@@ -527,7 +532,7 @@ export default function RagDocuments() {
               <div className={styles.sectionDivider} />
               <h3>Ask with AI</h3>
               <p className={styles.cardSubtitle}>
-                Answers use only retrieved excerpts from this PDF, with
+                Answers use only retrieved excerpts from this document, with
                 citations where possible.
               </p>
 

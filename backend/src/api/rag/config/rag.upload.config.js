@@ -22,9 +22,16 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype !== 'application/pdf') {
+  const extension = path.extname(file.originalname).toLowerCase(); // Normalize extension checks across filename casing.
+  const isPdf = extension === '.pdf' && ['application/pdf', 'application/octet-stream'].includes(file.mimetype); // Accept PDF files with common browser MIME values.
+  const isText = extension === '.txt' && ['text/plain', 'application/octet-stream'].includes(file.mimetype); // Accept plain-text files with common browser MIME values.
+
+  if (!isPdf && !isText) { // Reject unsupported extensions and mismatched file types.
     return cb(
-      new multer.MulterError('LIMIT_UNEXPECTED_FILE', 'Only PDF files are allowed.'),
+      new multer.MulterError(
+        'LIMIT_UNEXPECTED_FILE',
+        'Only PDF and TXT files are allowed.',
+      ),
     );
   }
 

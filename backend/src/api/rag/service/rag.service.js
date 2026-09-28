@@ -281,8 +281,15 @@ const markDocumentFailed = async (documentId, errorMessage) => {
  */
 export const createDocumentFromUploadService = async ({ file, userId }) => {
   if (!file) {
-    throw new BadRequestError('A PDF file is required.');
+    throw new BadRequestError('A PDF or TXT file is required.');
   }
+
+  const extension = path.extname(file.originalname).toLowerCase(); // Identify the uploaded document format.
+  if (!['.pdf', '.txt'].includes(extension)) { // Keep direct service calls within the supported formats.
+    throw new BadRequestError('Only PDF and TXT files are supported.');
+  }
+
+  const mimeType = extension === '.pdf' ? 'application/pdf' : 'text/plain'; // Store a consistent MIME type based on the validated extension.
 
   // 1. Enforce max documents per user
   const countRows = await safeExecute(
@@ -306,30 +313,33 @@ export const createDocumentFromUploadService = async ({ file, userId }) => {
         (user_id, title, mime_type, storage_path, byte_size, status)
       VALUES (?, ?, ?, ?, ?, 'processing')
     `,
-    [userId, file.originalname, file.mimetype, relativeStoragePath, file.size],
+    [userId, file.originalname, mimeType, relativeStoragePath, file.size],
   );
 
   const documentId = insertResult.insertId;
 
   try {
-    // 4. Parse the PDF into raw text
-   // NEW:
-const fileBuffer = await fs.readFile(file.path);
+    // Read the uploaded file once, then extract text according to its format.
+    const fileBuffer = await fs.readFile(file.path); // Load the saved upload for text extraction.
+    let text = ''; // Hold extracted text before chunking.
 
-const parser = new PDFParse({ data: fileBuffer });
-let text = '';
+    if (extension === '.pdf') { // Parse PDF bytes into searchable text.
+      const parser = new PDFParse({ data: fileBuffer }); // Initialize the installed PDF parser.
 
-try {
-  const result = await parser.getText();
-  text = (result.text || '').trim();
-} finally {
-  await parser.destroy();
-}
+      try {
+        const result = await parser.getText(); // Extract the text content from the PDF.
+        text = (result.text || '').trim(); // Remove surrounding whitespace before chunking.
+      } finally {
+        await parser.destroy(); // Release parser resources even when extraction fails.
+      }
+    } else { // Decode TXT bytes directly as UTF-8.
+      text = fileBuffer.toString('utf8').replace(/^\uFEFF/, '').trim(); // Remove a possible UTF-8 BOM and surrounding whitespace.
+    }
 
     if (text.length < RAG_MIN_TEXT_CHARS) {
       await markDocumentFailed(
         documentId,
-        'The PDF did not contain enough extractable text.',
+        'The document did not contain enough extractable text.',
       );
     } else {
       // 5. Chunk the text

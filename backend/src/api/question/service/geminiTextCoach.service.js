@@ -98,6 +98,47 @@ Provide between 2 and 5 specific, actionable tips.`;
 };
 
 /**
+ * Suggests a useful question and general explanation when semantic search has no matches.
+ * @param {{ query: string }} params
+ * @returns {Promise<{ suggestedQuestion: string, explanation: string }>}
+ */
+export const generateSemanticSearchFallbackService = async ({ query }) => {
+  const prompt = `A learner searched an educational forum, but there are no matching forum questions yet.
+
+Search query: ${query}
+
+Suggest one clear, useful question the learner could ask about this topic, then provide a concise, accurate general explanation that helps answer it. Do not claim that this is based on forum posts or uploaded documents.
+
+Respond with ONLY valid JSON:
+{"suggestedQuestion":"...","explanation":"..."}`;
+
+  try {
+    // Generate and parse the Gemini response.
+    const response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: prompt,
+    });
+    const parsed = extractJson(extractResponseText(response));
+
+    if (
+      typeof parsed?.suggestedQuestion === 'string' &&
+      typeof parsed?.explanation === 'string'
+    ) {
+      return parsed;
+    }
+  } catch (error) {
+    console.error('Semantic search fallback generation failed:', error);
+  }
+
+  // Keep the empty-search response useful if Gemini is unavailable or returns invalid JSON.
+  return {
+    suggestedQuestion: `What should I know about ${query}?`,
+    explanation:
+      'No matching forum questions are available yet, and an explanation could not be generated right now. Try refining your search or ask the community.',
+  };
+};
+
+/**
  * Assesses how well a draft answer addresses a specific question, using AI.
  *
  * @param {Object} params

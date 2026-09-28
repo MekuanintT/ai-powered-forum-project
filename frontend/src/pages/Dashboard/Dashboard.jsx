@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams();
 
   const [questions, setQuestions] = useState([]);
+  const [semanticSuggestion, setSemanticSuggestion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('keyword');
 
@@ -149,10 +150,12 @@ export default function Dashboard() {
       const data = await getQuestions();
 
       setQuestions(normalizeQuestions(data));
+      setSemanticSuggestion(null);
     } catch (err) {
       console.error('Failed to load questions:', err);
 
       setQuestions([]);
+      setSemanticSuggestion(null);
       setError('Failed to load questions.');
     } finally {
       setIsLoading(false);
@@ -192,7 +195,9 @@ export default function Dashboard() {
 
       if (mode === 'semantic') {
         data = await searchQuestionsSemantic(query);
+        setSemanticSuggestion(data.suggestion);
       } else {
+        setSemanticSuggestion(null);
         data = await getQuestions({
           search: query,
         });
@@ -203,6 +208,7 @@ export default function Dashboard() {
       console.error('Failed to search questions:', err);
 
       setQuestions([]);
+      setSemanticSuggestion(null);
       setError('Failed to search questions.');
     } finally {
       setIsLoading(false);
@@ -520,9 +526,17 @@ export default function Dashboard() {
                   No questions found
                 </h3>
 
-                <p>
-                  Be the first to start a discussion.
-                </p>
+                {searchMode === 'semantic' && semanticSuggestion ? (
+                  <div className={styles.semanticSuggestion}>
+                    <h4>{semanticSuggestion.suggestedQuestion}</h4>
+                    <p>{semanticSuggestion.explanation}</p>
+                    <small>
+                      AI-generated general explanation, not a forum answer.
+                    </small>
+                  </div>
+                ) : (
+                  <p>Be the first to start a discussion.</p>
+                )}
 
                 <button
                   type="button"

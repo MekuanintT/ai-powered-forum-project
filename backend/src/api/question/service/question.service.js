@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { safeExecute } from "../../../../db/config.js";
 
 import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
+import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
 
 import {
   generateQuestionEmbedding,
@@ -310,8 +311,11 @@ export const searchQuestionsSemanticService = async ({
 
   // If nothing matches
   if (scoredQuestions.length === 0) {
+    const suggestion = await generateSemanticSearchFallbackService({ query });
+
     return {
       data: [],
+      suggestion,
       meta: {
         total: 0,
         k,

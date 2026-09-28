@@ -690,6 +690,37 @@
   font-size: 10px;
 }
 
+.semanticSuggestion {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 0 0 16px;
+  padding: 16px 18px;
+  background: #f8fafc;
+  border: 1px solid #dfe6ee;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.semanticSuggestion h4 {
+  margin: 0 0 8px;
+  color: #26354e;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.semanticSuggestion p {
+  margin: 0 0 10px;
+  color: #40506a;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.semanticSuggestion small {
+  color: #7b899c;
+  font-size: 11px;
+}
+
 .newQuestionButton {
   padding: 8px 14px;
 

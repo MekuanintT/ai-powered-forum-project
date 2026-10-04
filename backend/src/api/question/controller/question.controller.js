@@ -2,6 +2,8 @@ import { StatusCodes } from 'http-status-codes';
 
 import {
   createQuestionWithVectorService,
+  updateQuestionService,
+  deleteQuestionService,
   getSimilarQuestionsService,
   searchQuestionsSemanticService,
   getQuestionsService,
@@ -86,6 +88,7 @@ export const searchQuestionsSemanticController = async (req, res, next) => {
       success: true,
       message: 'Semantic search completed successfully',
       data: result.data,
+       suggestion: result.suggestion ?? null, /**iiiiiiiiiiiiiiiii */
       meta: result.meta,
     });
   } catch (error) {
@@ -206,6 +209,43 @@ export const getSingleQuestionController = async (req, res, next) => {
       question,
       answers,
       answersMeta,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+    const { title, content } = req.body;
+    const result = await updateQuestionService({
+      questionHash,
+      userId: req.user.id,
+      title,
+      content,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Question updated successfully.',
+      data: result.question,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteQuestionController = async (req, res, next) => {
+  try {
+    await deleteQuestionService({
+      questionHash: req.params.questionHash,
+      userId: req.user.id,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Question deleted successfully.',
     });
   } catch (error) {
     next(error);

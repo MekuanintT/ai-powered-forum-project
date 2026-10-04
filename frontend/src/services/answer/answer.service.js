@@ -54,6 +54,26 @@ export async function postAnswer(questionId, content) {
   }
 }
 
+export async function updateAnswer(answerId, content) {
+  try {
+    const response = await apiClient.put(`/api/answers/${answerId}`, {
+      content,
+    });
+    return getResponseData(response);
+  } catch (error) {
+    throw handleAnswerError(error, 'Failed to update answer. Please try again.');
+  }
+}
+
+export async function deleteAnswer(answerId) {
+  try {
+    const response = await apiClient.delete(`/api/answers/${answerId}`);
+    return getResponseData(response);
+  } catch (error) {
+    throw handleAnswerError(error, 'Failed to delete answer. Please try again.');
+  }
+}
+
 /**
  * Lists the answers belonging to a question.
  *
@@ -78,5 +98,7 @@ export async function getAnswersByQuestion(questionHash) {
 
 export const answerService = {
   postAnswer,
+  updateAnswer,
+  deleteAnswer,
   getAnswersByQuestion,
 };

@@ -76,3 +76,65 @@ export const createAnswerService = async payload => {
 
   return { answer };
 };
+
+export const updateAnswerService = async ({ answerId, userId, content }) => {
+  const result = await safeExecute(
+    'UPDATE answers SET content = ? WHERE answer_id = ? AND user_id = ?',
+    [content, answerId, userId],
+  );
+
+  if (!result.affectedRows) {
+    const ownedAnswer = await safeExecute(
+      'SELECT answer_id FROM answers WHERE answer_id = ? AND user_id = ? LIMIT 1',
+      [answerId, userId],
+    );
+
+    if (!ownedAnswer.length) {
+      throw new NotFoundError('Answer not found.');
+    }
+  }
+
+  const [answerRow] = await safeExecute(
+    `
+      SELECT
+        a.answer_id AS id,
+        a.question_id AS questionId,
+        a.content,
+        a.created_at AS createdAt,
+        a.updated_at AS updatedAt,
+        u.user_id AS authorId,
+        u.first_name AS authorFirstName,
+        u.last_name AS authorLastName
+      FROM answers a
+      JOIN users u ON u.user_id = a.user_id
+      WHERE a.answer_id = ? AND a.user_id = ?
+    `,
+    [answerId, userId],
+  );
+
+  return {
+    answer: {
+      id: answerRow.id,
+      questionId: answerRow.questionId,
+      content: answerRow.content,
+      createdAt: answerRow.createdAt,
+      updatedAt: answerRow.updatedAt,
+      author: {
+        id: answerRow.authorId,
+        firstName: answerRow.authorFirstName,
+        lastName: answerRow.authorLastName,
+      },
+    },
+  };
+};
+
+export const deleteAnswerService = async ({ answerId, userId }) => {
+  const result = await safeExecute(
+    'DELETE FROM answers WHERE answer_id = ? AND user_id = ?',
+    [answerId, userId],
+  );
+
+  if (!result.affectedRows) {
+    throw new NotFoundError('Answer not found.');
+  }
+};

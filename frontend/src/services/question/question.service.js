@@ -40,6 +40,27 @@ export async function createQuestion(question) {
   }
 }
 
+export async function updateQuestion(questionHash, question) {
+  try {
+    const response = await apiClient.put(
+      `/api/questions/${questionHash}`,
+      question,
+    );
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to update question. Please try again.');
+  }
+}
+
+export async function deleteQuestion(questionHash) {
+  try {
+    const response = await apiClient.delete(`/api/questions/${questionHash}`);
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to delete question. Please try again.');
+  }
+}
+
 /**
  * Requests writing feedback from the AI draft coach.
  * @param {{ title: string, content: string }} draft
@@ -179,6 +200,8 @@ export async function assessAnswerFit(questionHash, answerText) {
 
 export const questionService = {
   createQuestion,
+  updateQuestion,
+  deleteQuestion,
   generateQuestionDraftCoach,
   getQuestions,
   searchQuestionsSemantic,

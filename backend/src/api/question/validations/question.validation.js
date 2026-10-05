@@ -89,6 +89,11 @@ export const getSingleQuestionValidation = [
   validationErrorHandler,
 ];
 
+export const updateQuestionValidation = [
+  ...getSingleQuestionValidation.slice(0, -1),
+  ...createQuestionValidation,
+];
+
 /**
  * Validates the questionHash path param for the similar-questions endpoint,
  * plus optional k and threshold query params.

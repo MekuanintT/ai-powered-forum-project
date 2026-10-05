@@ -5,6 +5,7 @@ import { safeExecute } from "../../../../db/config.js";
 import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
 import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
 
+import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
 import {
   generateQuestionEmbedding,
   normalizeQuestionText,
@@ -12,6 +13,63 @@ import {
 } from "./vector.service.js";
 
 const generateQuestionHash = () => crypto.randomBytes(8).toString("hex");
+
+export const updateQuestionService = async ({
+  questionHash,
+  userId,
+  title,
+  content,
+}) => {
+  const existing = await safeExecute(
+    "SELECT question_id FROM questions WHERE question_hash = ? AND user_id = ? LIMIT 1",
+    [questionHash, userId],
+  );
+
+  if (!existing.length) {
+    throw new NotFoundError("Question not found.");
+  }
+
+  await safeExecute(
+    "UPDATE questions SET title = ?, content = ? WHERE question_hash = ? AND user_id = ?",
+    [title, content, questionHash, userId],
+  );
+
+  const sourceText = normalizeQuestionText({ title });
+
+  try {
+    const embeddingResult = await generateQuestionEmbedding(sourceText);
+    await storeQuestionVector({
+      questionId: existing[0].question_id,
+      sourceText,
+      embedding: embeddingResult.embedding,
+      status: "ready",
+    });
+  } catch (error) {
+    console.error("Failed to refresh question vector after edit:", error);
+    await storeQuestionVector({
+      questionId: existing[0].question_id,
+      sourceText,
+      embedding: [],
+      status: "failed",
+    }).catch((storeError) =>
+      console.error("Failed to save question vector status:", storeError),
+    );
+  }
+
+  const { question } = await getSingleQuestionService(questionHash, false);
+  return { question };
+};
+
+export const deleteQuestionService = async ({ questionHash, userId }) => {
+  const result = await safeExecute(
+    "DELETE FROM questions WHERE question_hash = ? AND user_id = ?",
+    [questionHash, userId],
+  );
+
+  if (!result.affectedRows) {
+    throw new NotFoundError("Question not found.");
+  }
+};
 
 /**
  * Creates a new question and stores its vector embedding for semantic search.
@@ -191,11 +249,15 @@ export const getSimilarQuestionsService = async (questionHash) => {
       q.title,
       q.content,
       q.user_id,
+      u.first_name,
+      u.last_name,
       q.created_at,
       qv.embedding
     FROM questions q
     INNER JOIN question_vectors qv
       ON q.question_id = qv.question_id
+    INNER JOIN users u
+      ON u.user_id = q.user_id
     WHERE q.question_id != ?
       AND qv.status = 'ready'
   `;
@@ -224,6 +286,12 @@ export const getSimilarQuestionsService = async (questionHash) => {
         title: row.title,
         content: row.content,
         userId: row.user_id,
+        authorName: [row.first_name, row.last_name].filter(Boolean).join(" "),
+        author: {
+          id: row.user_id,
+          firstName: row.first_name,
+          lastName: row.last_name,
+        },
         createdAt: row.created_at,
         similarity,
       };

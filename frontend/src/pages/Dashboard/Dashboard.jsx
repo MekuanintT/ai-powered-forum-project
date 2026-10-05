@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
@@ -72,6 +72,28 @@ export default function Dashboard() {
     );
   };
 
+  const getAvatarHue = (question) => {
+    const authorId =
+      question.author?.id ??
+      question.authorId ??
+      question.author_id ??
+      question.userId ??
+      question.user_id;
+
+    if (authorId !== undefined && authorId !== null) {
+      return ((Number(authorId) * 137.508) % 360).toFixed(2);
+    }
+
+    const stableName = getAuthor(question);
+    let hash = 0;
+
+    for (let index = 0; index < stableName.length; index += 1) {
+      hash = (hash * 31 + stableName.charCodeAt(index)) % 360;
+    }
+
+    return String(hash);
+  };
+
   const getAnswerCount = (question) =>
     question.answerCount ??
     question.answer_count ??
@@ -105,7 +127,7 @@ export default function Dashboard() {
     }
 
     const seconds = Math.floor(
-      (Date.now() - date.getTime()) / 1000
+      (currentTime - date.getTime()) / 1000
     );
 
     if (seconds < 60) {
@@ -162,25 +184,6 @@ export default function Dashboard() {
     }
   };
 
-  useEffect(() => {
-    const keywordQuery = searchParams.get('q');
-    const semanticQuery = searchParams.get('semantic');
-
-    if (semanticQuery) {
-      setSearchQuery(semanticQuery);
-      setSearchMode('semantic');
-      runSearch(semanticQuery, 'semantic');
-    } else if (keywordQuery) {
-      setSearchQuery(keywordQuery);
-      setSearchMode('keyword');
-      runSearch(keywordQuery, 'keyword');
-    } else {
-      setSearchQuery('');
-      loadQuestions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
   /*
    * Run a search against the API for a given query/mode. Shared by both
    * the URL-driven effect above (Navbar-triggered search) and the
@@ -204,6 +207,7 @@ export default function Dashboard() {
       }
 
       setQuestions(normalizeQuestions(data));
+      setCurrentTime(Date.now());
     } catch (err) {
       console.error('Failed to search questions:', err);
 
@@ -214,6 +218,31 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const keywordQuery = searchParams.get('q');
+    const semanticQuery = searchParams.get('semantic');
+
+    if (semanticQuery) {
+      startTransition(() => {
+        setSearchQuery(semanticQuery);
+        setSearchMode('semantic');
+        runSearch(semanticQuery, 'semantic');
+      });
+    } else if (keywordQuery) {
+      startTransition(() => {
+        setSearchQuery(keywordQuery);
+        setSearchMode('keyword');
+        runSearch(keywordQuery, 'keyword');
+      });
+    } else {
+      startTransition(() => {
+        setSearchQuery('');
+        loadQuestions();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   /*
    * Search
@@ -598,7 +627,10 @@ export default function Dashboard() {
                     >
 
                       {/* Avatar */}
-                      <div className={styles.avatar}>
+                      <div
+                        className={styles.avatar}
+                        style={{ '--avatar-hue': getAvatarHue(question) }}
+                      >
                         {author
                           .charAt(0)
                           .toUpperCase()}

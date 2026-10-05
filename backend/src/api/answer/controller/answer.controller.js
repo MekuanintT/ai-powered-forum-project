@@ -1,5 +1,9 @@
 import { StatusCodes } from 'http-status-codes';
-import { createAnswerService } from '../service/answer.service.js';
+import {
+  createAnswerService,
+  updateAnswerService,
+  deleteAnswerService,
+} from '../service/answer.service.js';
 
 /**
  * Handles creating a new answer to a question.
@@ -22,6 +26,40 @@ export const createAnswerController = async (req, res, next) => {
       success: true,
       message: 'Answer posted successfully',
       data: result.answer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateAnswerController = async (req, res, next) => {
+  try {
+    const result = await updateAnswerService({
+      answerId: req.params.answerId,
+      userId: req.user.id,
+      content: req.body.content,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Answer updated successfully.',
+      data: result.answer,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteAnswerController = async (req, res, next) => {
+  try {
+    await deleteAnswerService({
+      answerId: req.params.answerId,
+      userId: req.user.id,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: 'Answer deleted successfully.',
     });
   } catch (error) {
     next(error);

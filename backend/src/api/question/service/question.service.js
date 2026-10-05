@@ -1,11 +1,9 @@
 import crypto from "crypto";
 
 import { safeExecute } from "../../../../db/config.js";
-
 import { BadRequestError, NotFoundError } from "../../../utils/errors/index.js";
-import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
+import { generateSemanticSearchFallbackService } from "./geminiTextCoach.service.js";
 
-import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
 import {
   generateQuestionEmbedding,
   normalizeQuestionText,
@@ -14,6 +12,132 @@ import {
 
 const generateQuestionHash = () => crypto.randomBytes(8).toString("hex");
 
+/**
+ * Calculates cosine similarity between two vectors.
+ *
+ * @param {number[]} vectorA
+ * @param {number[]} vectorB
+ * @returns {number}
+ */
+const cosineSimilarity = (vectorA, vectorB) => {
+  if (
+    !Array.isArray(vectorA) ||
+    !Array.isArray(vectorB) ||
+    vectorA.length === 0 ||
+    vectorB.length === 0 ||
+    vectorA.length !== vectorB.length
+  ) {
+    return 0;
+  }
+
+  let dotProduct = 0;
+  let magnitudeA = 0;
+  let magnitudeB = 0;
+
+  for (let i = 0; i < vectorA.length; i += 1) {
+    dotProduct += vectorA[i] * vectorB[i];
+    magnitudeA += vectorA[i] * vectorA[i];
+    magnitudeB += vectorB[i] * vectorB[i];
+  }
+
+  if (magnitudeA === 0 || magnitudeB === 0) {
+    return 0;
+  }
+
+  return dotProduct / (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB));
+};
+
+/**
+ * Creates a new question and stores its vector embedding for semantic search.
+ *
+ * @param {Object} payload - The question data
+ * @param {string} payload.userId - ID of the user creating the question
+ * @param {string} payload.title - Title of the question
+ * @param {string} payload.content - Content/body of the question
+ * @returns {Promise<Object>} Object containing the created question
+ */
+export const createQuestionWithVectorService = async (payload) => {
+  const { userId, title, content } = payload;
+
+  const insertQuestionSql =
+    "INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)";
+
+  const questionHash = generateQuestionHash();
+
+  let questionResult;
+
+  try {
+    questionResult = await safeExecute(insertQuestionSql, [
+      questionHash,
+      userId,
+      title,
+      content,
+    ]);
+  } catch (error) {
+    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
+      throw new BadRequestError("User does not exist.");
+    }
+
+    throw error;
+  }
+
+  const questionId = questionResult.insertId;
+
+  const creationResult = {
+    id: questionId,
+    questionHash,
+    title,
+    content,
+    userId,
+  };
+
+  // Normalize the question title to prepare it for vector embedding
+  const sourceText = normalizeQuestionText({
+    title: payload.title,
+  });
+
+  try {
+    const embeddingResult = await generateQuestionEmbedding(sourceText, {
+      questionId: creationResult.id,
+    });
+
+    await storeQuestionVector({
+      questionId: creationResult.id,
+      sourceText,
+      embedding: embeddingResult.embedding,
+      status: "ready",
+    });
+  } catch (error) {
+    console.error("=== FAILED TO STORE VECTOR FOR QUESTION ===");
+    console.error("Question ID:", creationResult.id);
+    console.error("Operation: question creation");
+    console.error("Error:", error);
+    console.error("=============================================");
+
+    await storeQuestionVector({
+      questionId: creationResult.id,
+      sourceText,
+      embedding: [],
+      status: "failed",
+    }).catch((e) => console.error("Failed to save failed status", e));
+  }
+
+  return {
+    question: creationResult,
+  };
+};
+
+/**
+ * Updates an existing question (title/content), owned by the authenticated
+ * user, and refreshes its vector embedding.
+ *
+ * @param {Object} params
+ * @param {string} params.questionHash
+ * @param {number} params.userId
+ * @param {string} params.title
+ * @param {string} params.content
+ * @returns {Promise<{ question: Object }>}
+ */
 export const updateQuestionService = async ({
   questionHash,
   userId,
@@ -60,6 +184,14 @@ export const updateQuestionService = async ({
   return { question };
 };
 
+/**
+ * Deletes a question owned by the authenticated user.
+ *
+ * @param {Object} params
+ * @param {string} params.questionHash
+ * @param {number} params.userId
+ * @returns {Promise<void>}
+ */
 export const deleteQuestionService = async ({ questionHash, userId }) => {
   const result = await safeExecute(
     "DELETE FROM questions WHERE question_hash = ? AND user_id = ?",
@@ -69,121 +201,6 @@ export const deleteQuestionService = async ({ questionHash, userId }) => {
   if (!result.affectedRows) {
     throw new NotFoundError("Question not found.");
   }
-};
-
-/**
- * Creates a new question and stores its vector embedding for semantic search.
- *
- * @param {Object} payload - The question data
- * @param {string} payload.userId - ID of the user creating the question
- * @param {string} payload.title - Title of the question
- * @param {string} payload.content - Content/body of the question
- * @returns {Promise<Object>} Object containing the created question
- */
-export const createQuestionWithVectorService = async (payload) => {
-  const { userId, title, content } = payload;
-
-  const insertQuestionSql =
-    "INSERT INTO questions (question_hash, user_id, title, content) VALUES (?, ?, ?, ?)";
-
-  const questionHash = generateQuestionHash();
-
-  let questionResult;
-
-  try {
-    questionResult = await safeExecute(insertQuestionSql, [
-      questionHash,
-      userId,
-      title,
-      content,
-    ]);
-  } catch (error) {
-    if (error?.code === "ER_NO_REFERENCED_ROW_2") {
-      throw new BadRequestError("User does not exist.");
-    }
-
-    throw error;
-  }
-
-  const questionId = questionResult.insertId;
-
-  const creationResult = {
-    id: questionId,
-    questionHash,
-    title,
-    content,  
-    userId,
-  };
-
-  // Normalize the question title to prepare it for vector embedding
-  const sourceText = normalizeQuestionText({
-    title: payload.title,
-  });
-
-  try {
-    const embeddingResult = await generateQuestionEmbedding(sourceText, {
-      questionId: creationResult.id,
-    });
-
-    await storeQuestionVector({
-      questionId: creationResult.id,
-      sourceText,
-      embedding: embeddingResult.embedding,
-      status: "ready",
-    });
-  } catch (error) {
-    console.error("=== FAILED TO STORE VECTOR FOR QUESTION ===");
-    console.error("Question ID:", creationResult.id);
-    console.error("Operation: question creation");
-    console.error("Error:", error);
-    console.error("=============================================");
-
-    await storeQuestionVector({
-      questionId: creationResult.id,
-      sourceText,
-      embedding: [],
-      status: "failed",
-    }).catch((e) => console.error("Failed to save failed status", e));
-  }
-
-  return {
-    question: creationResult,
-  };
-};
-
-/**
- * Calculates cosine similarity between two vectors.
- *
- * @param {number[]} vectorA
- * @param {number[]} vectorB
- * @returns {number}
- */
-const cosineSimilarity = (vectorA, vectorB) => {
-  if (
-    !Array.isArray(vectorA) ||
-    !Array.isArray(vectorB) ||
-    vectorA.length === 0 ||
-    vectorB.length === 0 ||
-    vectorA.length !== vectorB.length
-  ) {
-    return 0;
-  }
-
-  let dotProduct = 0;
-  let magnitudeA = 0;
-  let magnitudeB = 0;
-
-  for (let i = 0; i < vectorA.length; i += 1) {
-    dotProduct += vectorA[i] * vectorB[i];
-    magnitudeA += vectorA[i] * vectorA[i];
-    magnitudeB += vectorB[i] * vectorB[i];
-  }
-
-  if (magnitudeA === 0 || magnitudeB === 0) {
-    return 0;
-  }
-
-  return dotProduct / (Math.sqrt(magnitudeA) * Math.sqrt(magnitudeB));
 };
 
 /**
@@ -316,17 +333,12 @@ export const getSimilarQuestionsService = async (questionHash) => {
 export const searchQuestionsSemanticService = async ({
   query,
   k = 5,
-  threshold = Number(
-    process.env.RECOMMEND_THRESHOLD ?? 0.75,
-  ),
+  threshold = Number(process.env.RECOMMEND_THRESHOLD ?? 0.75),
 }) => {
   // 1. Embed the search query
-  const embeddingResult = await generateQuestionEmbedding(
-    query,
-    {
-      taskType: 'RETRIEVAL_QUERY',
-    },
-  );
+  const embeddingResult = await generateQuestionEmbedding(query, {
+    taskType: "RETRIEVAL_QUERY",
+  });
 
   const queryEmbedding = embeddingResult.embedding;
 
@@ -343,10 +355,10 @@ export const searchQuestionsSemanticService = async ({
 
   // 3. Calculate cosine similarity
   const scoredQuestions = vectorRows
-    .map(row => {
+    .map((row) => {
       let embedding = row.embedding;
 
-      if (typeof embedding === 'string') {
+      if (typeof embedding === "string") {
         try {
           embedding = JSON.parse(embedding);
         } catch {
@@ -354,10 +366,7 @@ export const searchQuestionsSemanticService = async ({
         }
       }
 
-      const score = cosineSimilarity(
-        queryEmbedding,
-        embedding,
-      );
+      const score = cosineSimilarity(queryEmbedding, embedding);
 
       return {
         questionId: row.question_id,
@@ -365,15 +374,10 @@ export const searchQuestionsSemanticService = async ({
       };
     })
     .filter(Boolean)
-
     // 4. Filter by threshold
-    .filter(result => result.score >= threshold)
-
+    .filter((result) => result.score >= threshold)
     // 5. Sort highest score first
-    .sort(
-      (a, b) => b.score - a.score,
-    )
-
+    .sort((a, b) => b.score - a.score)
     // 6. Take top k results
     .slice(0, k);
 
@@ -395,13 +399,8 @@ export const searchQuestionsSemanticService = async ({
   }
 
   // 7. Get matching question IDs
-  const questionIds = scoredQuestions.map(
-    result => result.questionId,
-  );
-
-  const placeholders = questionIds
-    .map(() => '?')
-    .join(', ');
+  const questionIds = scoredQuestions.map((result) => result.questionId);
+  const placeholders = questionIds.map(() => "?").join(", ");
 
   // 8. Fetch question and author details
   const questionSql = `
@@ -434,25 +433,17 @@ export const searchQuestionsSemanticService = async ({
       u.last_name
   `;
 
-  const questionRows = await safeExecute(
-    questionSql,
-    questionIds,
-  );
+  const questionRows = await safeExecute(questionSql, questionIds);
 
   // 9. Map question details by ID
   const questionMap = new Map(
-    questionRows.map(question => [
-      question.id,
-      question,
-    ]),
+    questionRows.map((question) => [question.id, question]),
   );
 
   // 10. Combine question details with similarity score
   const data = scoredQuestions
-    .map(result => {
-      const question = questionMap.get(
-        result.questionId,
-      );
+    .map((result) => {
+      const question = questionMap.get(result.questionId);
 
       if (!question) {
         return null;
@@ -463,9 +454,7 @@ export const searchQuestionsSemanticService = async ({
         questionHash: question.questionHash,
         title: question.title,
         content: question.content,
-        answerCount: Number(
-          question.answerCount,
-        ),
+        answerCount: Number(question.answerCount),
         createdAt: question.createdAt,
         updatedAt: question.updatedAt,
         author: {
@@ -473,9 +462,7 @@ export const searchQuestionsSemanticService = async ({
           firstName: question.authorFirstName,
           lastName: question.authorLastName,
         },
-        score: Number(
-          result.score.toFixed(6),
-        ),
+        score: Number(result.score.toFixed(6)),
       };
     })
     .filter(Boolean);
@@ -488,101 +475,6 @@ export const searchQuestionsSemanticService = async ({
       threshold,
       query,
       questionHash: null,
-    },
-  };
-};
-
-export const getSingteQuestionService = async (
-  questionHash,
-  includeAnswers = true
-) => {
-  const normalizedAnswerLimit = 100; // Fixed max 100 records
-
-  const questionSqt = `
-    SELECT
-      q.question_id AS id,
-      q.question_hash AS questionHash,
-      q.title,
-      q.content,
-      q.created_at AS createdAt,
-      q.updated_at AS updatedAt,
-      u.user_id AS userId,
-      u.first_name AS firstName,
-      u.last_name AS lastName,
-      COUNT(DISTINCT a.answer_id) AS answerCount
-    FROM questions q
-    JOIN users u ON u.user_id = q.user_id
-    LEFT JOIN answers a ON a.question_id = q.question_id
-    WHERE q.question_hash = ?
-    GROUP BY q.question_id, u.user_id
-  `;
-
-  const questionRows = await safeExecute(questionSqt, [questionHash]);
-
-  if (!questionRows.length) {
-    throw new NotFoundError("Question not found");
-  }
-
-  if (!includeAnswers) {
-    return {
-      question: questionRows[0],
-    };
-  }
-
-  const question = questionRows[0];
-  const questionId = question.id;
-
-  const answersSqt = `
-    SELECT
-      a.answer_id AS id,
-      a.content,
-      a.created_at AS createdAt,
-      a.updated_at AS updatedAt,
-      au.user_id AS userId,
-      au.first_name AS firstName,
-      au.last_name AS lastName
-    FROM answers a
-    JOIN users au ON au.user_id = a.user_id
-    WHERE a.question_id = ?
-    ORDER BY a.created_at DESC
-    LIMIT ${normalizedAnswerLimit}
-  `;
-
-  const answers = await safeExecute(answersSqt, [questionId]);
-
-  return {
-    question: {
-      id: question.id,
-      questionHash: question.questionHash,
-      title: question.title,
-      content: question.content,
-      answerCount: question.answerCount,
-      createdAt: question.createdAt,
-      updatedAt: question.updatedAt,
-
-      author: {
-        id: question.userId,
-        firstName: question.firstName,
-        lastName: question.lastName,
-      },
-
-      answers: answers.map((answer) => ({
-        id: answer.id,
-        content: answer.content,
-        createdAt: answer.createdAt,
-        updatedAt: answer.updatedAt,
-
-        author: {
-          id: answer.userId,
-          firstName: answer.firstName,
-          lastName: answer.lastName,
-        },
-      })),
-
-      answersMeta: {
-        limit: normalizedAnswerLimit,
-        total: answers.length,
-      },
     },
   };
 };
@@ -604,19 +496,18 @@ export const getQuestionsService = async ({ search, mine, userId }) => {
     if (!userId) {
       throw new BadRequestError('User must be authenticated to filter by "mine".');
     }
-    conditions.push('q.user_id = ?');
+    conditions.push("q.user_id = ?");
     params.push(userId);
   }
 
   if (search) {
-    conditions.push('(q.title LIKE ? OR q.content LIKE ?)');
+    conditions.push("(q.title LIKE ? OR q.content LIKE ?)");
     const likeTerm = `%${search}%`;
     params.push(likeTerm, likeTerm);
   }
 
-  const whereClause = conditions.length > 0
-    ? `WHERE ${conditions.join(' AND ')}`
-    : '';
+  const whereClause =
+    conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
   const limit = 100;
 
@@ -674,24 +565,14 @@ export const getQuestionsService = async ({ search, mine, userId }) => {
     meta: {
       limit,
       total: data.length,
-      sortBy: 'newest',
-      sortOrder: 'desc',
+      sortBy: "newest",
+      sortOrder: "desc",
     },
   };
 };
 
-
 /**
  * Fetches a single question, its author, and its answers by hash.
- *
- * NOTE: this replaces the old `getSingteQuestionService` (typo in the name,
- * and it was never imported by the controller). Two other fixes bundled in:
- *   1. `answers` / `answersMeta` are now returned as siblings of `question`,
- *      not nested inside it — matches the documented response contract and
- *      what the frontend's getSingleQuestion() already expects.
- *   2. `answerCount` is cast to Number, same as getQuestionsService and
- *      searchQuestionsSemanticService do, since MySQL can return COUNT()
- *      as a string depending on the driver config.
  *
  * @param {string} questionHash
  * @param {boolean} [includeAnswers=true]
@@ -699,7 +580,7 @@ export const getQuestionsService = async ({ search, mine, userId }) => {
  */
 export const getSingleQuestionService = async (
   questionHash,
-  includeAnswers = true
+  includeAnswers = true,
 ) => {
   const normalizedAnswerLimit = 100; // Fixed max 100 records
 
@@ -746,7 +627,11 @@ export const getSingleQuestionService = async (
   };
 
   if (!includeAnswers) {
-    return { question, answers: [], answersMeta: { limit: normalizedAnswerLimit, total: 0 } };
+    return {
+      question,
+      answers: [],
+      answersMeta: { limit: normalizedAnswerLimit, total: 0 },
+    };
   }
 
   const answersSql = `

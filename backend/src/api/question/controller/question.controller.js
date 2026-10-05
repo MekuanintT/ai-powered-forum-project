@@ -1,4 +1,4 @@
-import { StatusCodes } from 'http-status-codes';
+import { StatusCodes } from "http-status-codes";
 
 import {
   createQuestionWithVectorService,
@@ -7,13 +7,13 @@ import {
   getSimilarQuestionsService,
   searchQuestionsSemanticService,
   getQuestionsService,
-  getSingleQuestionService, 
-} from '../service/question.service.js';
+  getSingleQuestionService,
+} from "../service/question.service.js";
 
 import {
   generateQuestionDraftCoachService,
   assessAnswerAgainstQuestionService,
-} from '../service/geminiTextCoach.service.js';
+} from "../service/geminiTextCoach.service.js";
 
 /**
  * Handles creating a new question.
@@ -35,7 +35,7 @@ export const createQuestionController = async (req, res, next) => {
 
     res.status(StatusCodes.CREATED).json({
       success: true,
-      message: 'Question posted successfully.',
+      message: "Question posted successfully.",
       data: result.question,
     });
   } catch (error) {
@@ -86,7 +86,7 @@ export const searchQuestionsSemanticController = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Semantic search completed successfully',
+      message: "Semantic search completed successfully",
       data: result.data,
       suggestion: result.suggestion ?? null,
       meta: result.meta,
@@ -116,9 +116,90 @@ export const getQuestionsController = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Questions fetched successfully.',
+      message: "Questions fetched successfully.",
       data: result.data,
       meta: result.meta,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handles retrieving a single question, its author, and its answers.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const getSingleQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+
+    const { question, answers, answersMeta } =
+      await getSingleQuestionService(questionHash);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Question fetched successfully",
+      question,
+      answers,
+      answersMeta,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handles updating a question owned by the authenticated user.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const updateQuestionController = async (req, res, next) => {
+  try {
+    const { questionHash } = req.params;
+    const { title, content } = req.body;
+
+    const result = await updateQuestionService({
+      questionHash,
+      userId: req.user.id,
+      title,
+      content,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Question updated successfully.",
+      data: result.question,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Handles deleting a question owned by the authenticated user.
+ *
+ * @param {import('express').Request} req - The Express request object.
+ * @param {import('express').Response} res - The Express response object.
+ * @param {import('express').NextFunction} next - The Express next function.
+ * @returns {Promise<void>}
+ */
+export const deleteQuestionController = async (req, res, next) => {
+  try {
+    await deleteQuestionService({
+      questionHash: req.params.questionHash,
+      userId: req.user.id,
+    });
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Question deleted successfully.",
     });
   } catch (error) {
     next(error);
@@ -141,7 +222,7 @@ export const generateQuestionDraftCoachController = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Draft suggestions generated',
+      message: "Draft suggestions generated",
       data,
     });
   } catch (error) {
@@ -169,83 +250,8 @@ export const assessAnswerAgainstQuestionController = async (req, res, next) => {
 
     res.status(StatusCodes.OK).json({
       success: true,
-      message: 'Answer fit assessed',
+      message: "Answer fit assessed",
       data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-// Add this import alongside the existing ones from question.service.js:
-//
-// import {
-//   createQuestionWithVectorService,
-//   getSimilarQuestionsService,
-//   searchQuestionsSemanticService,
-//   getQuestionsService,
-//   getSingleQuestionService,   <-- add this
-// } from '../service/question.service.js';
-
-/**
- * Handles retrieving a single question, its author, and its answers.
- *
- * @param {import('express').Request} req - The Express request object.
- * @param {import('express').Response} res - The Express response object.
- * @param {import('express').NextFunction} next - The Express next function.
- * @returns {Promise<void>}
- */
-export const getSingleQuestionController = async (req, res, next) => {
-  try {
-    const { questionHash } = req.params;
-
-    const { question, answers, answersMeta } =
-      await getSingleQuestionService(questionHash);
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: 'Question fetched successfully',
-      question,
-      answers,
-      answersMeta,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const updateQuestionController = async (req, res, next) => {
-  try {
-    const { questionHash } = req.params;
-    const { title, content } = req.body;
-    const result = await updateQuestionService({
-      questionHash,
-      userId: req.user.id,
-      title,
-      content,
-    });
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: 'Question updated successfully.',
-      data: result.question,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const deleteQuestionController = async (req, res, next) => {
-  try {
-    await deleteQuestionService({
-      questionHash: req.params.questionHash,
-      userId: req.user.id,
-    });
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: 'Question deleted successfully.',
     });
   } catch (error) {
     next(error);

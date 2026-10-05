@@ -6,9 +6,15 @@ import {
   getSingleQuestion,
   getSimilarQuestions,
   assessAnswerFit,
+  updateQuestion,
+  deleteQuestion,
 } from '../../services/question/question.service';
 
-import { postAnswer } from '../../services/answer/answer.service';
+import {
+  postAnswer,
+  updateAnswer,
+  deleteAnswer,
+} from '../../services/answer/answer.service';
 
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './QuestionDetail.module.css';
@@ -140,9 +146,11 @@ function getAvatarTint(name) {
 
 /* Markdown renderers shared by the question body and answers. */
 const markdownComponents = {
-  a: ({ node, ...props }) => (
-    <a {...props} target="_blank" rel="noopener noreferrer" />
-  ),
+  a: (props) => {
+    const anchorProps = { ...props };
+    delete anchorProps.node;
+    return <a {...anchorProps} target="_blank" rel="noopener noreferrer" />;
+  },
 };
 
 export default function QuestionDetail() {
@@ -163,6 +171,14 @@ export default function QuestionDetail() {
   const [answerText, setAnswerText] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [postError, setPostError] = useState('');
+  const [isEditingQuestion, setIsEditingQuestion] = useState(false);
+  const [questionDraft, setQuestionDraft] = useState({ title: '', content: '' });
+  const [isSavingQuestion, setIsSavingQuestion] = useState(false);
+  const [questionActionError, setQuestionActionError] = useState('');
+  const [editingAnswerId, setEditingAnswerId] = useState(null);
+  const [answerDraft, setAnswerDraft] = useState('');
+  const [isSavingAnswer, setIsSavingAnswer] = useState(false);
+  const [answerActionError, setAnswerActionError] = useState('');
 
   const [fitResult, setFitResult] = useState(null);
   const [isCheckingFit, setIsCheckingFit] = useState(false);
@@ -392,6 +408,81 @@ export default function QuestionDetail() {
     }
   };
 
+  const handleSaveQuestion = async (event) => {
+    event.preventDefault();
+    if (isSavingQuestion) return;
+
+    try {
+      setIsSavingQuestion(true);
+      setQuestionActionError('');
+      const updatedQuestion = await updateQuestion(questionHash, {
+        title: questionDraft.title.trim(),
+        content: questionDraft.content.trim(),
+      });
+      setQuestion(updatedQuestion);
+      setIsEditingQuestion(false);
+    } catch (err) {
+      setQuestionActionError(err.message || 'Failed to update this question.');
+    } finally {
+      setIsSavingQuestion(false);
+    }
+  };
+
+  const handleDeleteQuestion = async () => {
+    if (!window.confirm('Delete this question and all of its answers?')) return;
+
+    try {
+      setQuestionActionError('');
+      await deleteQuestion(questionHash);
+      navigate('/');
+    } catch (err) {
+      setQuestionActionError(err.message || 'Failed to delete this question.');
+    }
+  };
+
+  const handleSaveAnswer = async (event) => {
+    event.preventDefault();
+    if (isSavingAnswer || !editingAnswerId) return;
+
+    try {
+      setIsSavingAnswer(true);
+      setAnswerActionError('');
+      const updatedAnswer = await updateAnswer(
+        editingAnswerId,
+        answerDraft.trim(),
+      );
+      setAnswers((previous) =>
+        previous.map((answer) =>
+          String(getRecordId(answer)) === String(editingAnswerId)
+            ? updatedAnswer
+            : answer,
+        ),
+      );
+      setEditingAnswerId(null);
+      setAnswerDraft('');
+    } catch (err) {
+      setAnswerActionError(err.message || 'Failed to update this answer.');
+    } finally {
+      setIsSavingAnswer(false);
+    }
+  };
+
+  const handleDeleteAnswer = async (answerId) => {
+    if (!window.confirm('Delete this answer?')) return;
+
+    try {
+      setAnswerActionError('');
+      await deleteAnswer(answerId);
+      setAnswers((previous) =>
+        previous.filter(
+          (answer) => String(getRecordId(answer)) !== String(answerId),
+        ),
+      );
+    } catch (err) {
+      setAnswerActionError(err.message || 'Failed to delete this answer.');
+    }
+  };
+
   /* =========================================================
      Share
   ========================================================= */
@@ -482,15 +573,77 @@ export default function QuestionDetail() {
             </div>
           </header>
 
-          <h1 className={styles.questionTitle}>
-            {question.title || 'Untitled question'}
-          </h1>
-
-          <div className={styles.markdownBody}>
-            <ReactMarkdown components={markdownComponents}>
-              {question.content || ''}
-            </ReactMarkdown>
-          </div>
+          {isEditingQuestion ? (
+            <form className={styles.editForm} onSubmit={handleSaveQuestion}>
+              <label className={styles.editField}>
+                Title
+                <input
+                  className={styles.editInput}
+                  value={questionDraft.title}
+                  onChange={(event) =>
+                    setQuestionDraft((draft) => ({
+                      ...draft,
+                      title: event.target.value,
+                    }))
+                  }
+                  minLength={5}
+                  maxLength={255}
+                  required
+                />
+              </label>
+              <label className={styles.editField}>
+                Details
+                <textarea
+                  className={styles.editTextarea}
+                  value={questionDraft.content}
+                  onChange={(event) =>
+                    setQuestionDraft((draft) => ({
+                      ...draft,
+                      content: event.target.value,
+                    }))
+                  }
+                  minLength={10}
+                  required
+                />
+              </label>
+              {questionActionError && (
+                <p className={styles.actionError} role="alert">
+                  {questionActionError}
+                </p>
+              )}
+              <div className={styles.editActions}>
+                <button
+                  type="submit"
+                  className={styles.primaryButton}
+                  disabled={isSavingQuestion}
+                >
+                  {isSavingQuestion ? 'Saving...' : 'Save changes'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => {
+                    setIsEditingQuestion(false);
+                    setQuestionActionError('');
+                  }}
+                  disabled={isSavingQuestion}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h1 className={styles.questionTitle}>
+                {question.title || 'Untitled question'}
+              </h1>
+              <div className={styles.markdownBody}>
+                <ReactMarkdown components={markdownComponents}>
+                  {question.content || ''}
+                </ReactMarkdown>
+              </div>
+            </>
+          )}
 
           <footer className={styles.questionFooter}>
             <button
@@ -508,7 +661,38 @@ export default function QuestionDetail() {
             >
               {answerCount} {answerCount === 1 ? 'Answer' : 'Answers'}
             </button>
+            {isOwnQuestion && !isEditingQuestion && (
+              <div className={styles.ownerActions}>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => {
+                    setQuestionDraft({
+                      title: question.title || '',
+                      content: question.content || '',
+                    });
+                    setQuestionActionError('');
+                    setIsEditingQuestion(true);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className={styles.dangerButton}
+                  onClick={handleDeleteQuestion}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
           </footer>
+
+          {!isEditingQuestion && questionActionError && (
+            <p className={styles.actionError} role="alert">
+              {questionActionError}
+            </p>
+          )}
 
         </article>
 
@@ -526,6 +710,8 @@ export default function QuestionDetail() {
 
           {relatedQuestions.map((related) => {
             const relatedHash = getQuestionHashOf(related);
+            const relatedAuthorName =
+              related.authorName || getAuthorName(related);
 
             return (
               <button
@@ -541,7 +727,7 @@ export default function QuestionDetail() {
                 </span>
 
                 <span className={styles.relatedMeta}>
-                  <span>{getAuthorName(related)}</span>
+                  <span>{relatedAuthorName}</span>
                   <span>{formatDate(getCreatedAt(related))}</span>
                 </span>
               </button>
@@ -586,6 +772,13 @@ export default function QuestionDetail() {
             <div className={styles.answerList}>
               {answers.map((answer) => {
                 const answerAuthor = getAuthorName(answer);
+                const currentUserId = user?.id || user?.userId || user?.user_id;
+                const answerAuthorId = getAuthorId(answer);
+                const isOwnAnswer =
+                  currentUserId &&
+                  answerAuthorId &&
+                  String(currentUserId) === String(answerAuthorId);
+                const answerId = getRecordId(answer);
 
                 return (
                   <article
@@ -607,13 +800,76 @@ export default function QuestionDetail() {
                           {formatDate(getCreatedAt(answer))}
                         </div>
                       </div>
+                      {isOwnAnswer && editingAnswerId !== answerId && (
+                        <div className={styles.answerActions}>
+                          <button
+                            type="button"
+                            className={styles.ghostButton}
+                            onClick={() => {
+                              setEditingAnswerId(answerId);
+                              setAnswerDraft(answer.content || '');
+                              setAnswerActionError('');
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.dangerButton}
+                            onClick={() => handleDeleteAnswer(answerId)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
                     </header>
 
-                    <div className={styles.markdownBody}>
-                      <ReactMarkdown components={markdownComponents}>
-                        {answer.content || ''}
-                      </ReactMarkdown>
-                    </div>
+                    {editingAnswerId === answerId ? (
+                      <form className={styles.editForm} onSubmit={handleSaveAnswer}>
+                        <label className={styles.editField}>
+                          Answer
+                          <textarea
+                            className={styles.editTextarea}
+                            value={answerDraft}
+                            onChange={(event) => setAnswerDraft(event.target.value)}
+                            minLength={MIN_ANSWER_LENGTH}
+                            required
+                          />
+                        </label>
+                        {answerActionError && (
+                          <p className={styles.actionError} role="alert">
+                            {answerActionError}
+                          </p>
+                        )}
+                        <div className={styles.editActions}>
+                          <button
+                            type="submit"
+                            className={styles.primaryButton}
+                            disabled={isSavingAnswer}
+                          >
+                            {isSavingAnswer ? 'Saving...' : 'Save changes'}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.ghostButton}
+                            onClick={() => {
+                              setEditingAnswerId(null);
+                              setAnswerDraft('');
+                              setAnswerActionError('');
+                            }}
+                            disabled={isSavingAnswer}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className={styles.markdownBody}>
+                        <ReactMarkdown components={markdownComponents}>
+                          {answer.content || ''}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                   </article>
                 );
               })}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { startTransition, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import {
@@ -15,6 +15,9 @@ export default function Dashboard() {
   const [searchParams] = useSearchParams();
 
   const [questions, setQuestions] = useState([]);
+  const [semanticSuggestion, setSemanticSuggestion] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('keyword');
 
@@ -71,6 +74,28 @@ export default function Dashboard() {
     );
   };
 
+  const getAvatarHue = (question) => {
+    const authorId =
+      question.author?.id ??
+      question.authorId ??
+      question.author_id ??
+      question.userId ??
+      question.user_id;
+
+    if (authorId !== undefined && authorId !== null) {
+      return ((Number(authorId) * 137.508) % 360).toFixed(2);
+    }
+
+    const stableName = getAuthor(question);
+    let hash = 0;
+
+    for (let index = 0; index < stableName.length; index += 1) {
+      hash = (hash * 31 + stableName.charCodeAt(index)) % 360;
+    }
+
+    return String(hash);
+  };
+
   const getAnswerCount = (question) =>
     question.answerCount ??
     question.answer_count ??
@@ -104,7 +129,7 @@ export default function Dashboard() {
     }
 
     const seconds = Math.floor(
-      (Date.now() - date.getTime()) / 1000
+      (currentTime - date.getTime()) / 1000
     );
 
     if (seconds < 60) {
@@ -149,34 +174,20 @@ export default function Dashboard() {
       const data = await getQuestions();
 
       setQuestions(normalizeQuestions(data));
+      setCurrentTime(Date.now());
+      setSemanticSuggestion(null);
+
     } catch (err) {
       console.error('Failed to load questions:', err);
 
       setQuestions([]);
+      setSemanticSuggestion(null);
+
       setError('Failed to load questions.');
     } finally {
       setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    const keywordQuery = searchParams.get('q');
-    const semanticQuery = searchParams.get('semantic');
-
-    if (semanticQuery) {
-      setSearchQuery(semanticQuery);
-      setSearchMode('semantic');
-      runSearch(semanticQuery, 'semantic');
-    } else if (keywordQuery) {
-      setSearchQuery(keywordQuery);
-      setSearchMode('keyword');
-      runSearch(keywordQuery, 'keyword');
-    } else {
-      setSearchQuery('');
-      loadQuestions();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
 
   /*
    * Run a search against the API for a given query/mode. Shared by both
@@ -192,22 +203,54 @@ export default function Dashboard() {
 
       if (mode === 'semantic') {
         data = await searchQuestionsSemantic(query);
+        setSemanticSuggestion(data.suggestion);
+
       } else {
+        setSemanticSuggestion(null);
+
         data = await getQuestions({
           search: query,
         });
       }
 
       setQuestions(normalizeQuestions(data));
+      setCurrentTime(Date.now());
     } catch (err) {
       console.error('Failed to search questions:', err);
 
       setQuestions([]);
+      setSemanticSuggestion(null);
+
       setError('Failed to search questions.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    const keywordQuery = searchParams.get('q');
+    const semanticQuery = searchParams.get('semantic');
+
+    if (semanticQuery) {
+      startTransition(() => {
+        setSearchQuery(semanticQuery);
+        setSearchMode('semantic');
+        runSearch(semanticQuery, 'semantic');
+      });
+    } else if (keywordQuery) {
+      startTransition(() => {
+        setSearchQuery(keywordQuery);
+        setSearchMode('keyword');
+        runSearch(keywordQuery, 'keyword');
+      });
+    } else {
+      startTransition(() => {
+        setSearchQuery('');
+        loadQuestions();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   /*
    * Search
@@ -519,10 +562,17 @@ export default function Dashboard() {
                 <h3>
                   No questions found
                 </h3>
-
-                <p>
-                  Be the first to start a discussion.
-                </p>
+                {searchMode === 'semantic' && semanticSuggestion ? (
+                  <div className={styles.semanticSuggestion}>
+                    <h4>{semanticSuggestion.suggestedQuestion}</h4>
+                    <p>{semanticSuggestion.explanation}</p>
+                    <small>
+                      AI-generated general explanation, not a forum answer.
+                    </small>
+                  </div>
+                ) : (
+                  <p>Be the first to start a discussion.</p>
+                )}
 
                 <button
                   type="button"
@@ -584,7 +634,10 @@ export default function Dashboard() {
                     >
 
                       {/* Avatar */}
-                      <div className={styles.avatar}>
+                      <div
+                        className={styles.avatar}
+                        style={{ '--avatar-hue': getAvatarHue(question) }}
+                      >
                         {author
                           .charAt(0)
                           .toUpperCase()}

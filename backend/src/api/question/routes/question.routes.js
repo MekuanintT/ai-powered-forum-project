@@ -8,6 +8,8 @@ import {
   generateQuestionDraftCoachController,
   assessAnswerAgainstQuestionController,
    getSingleQuestionController,
+  updateQuestionController,
+  deleteQuestionController,
 } from '../controller/question.controller.js';
 
 import {
@@ -18,6 +20,7 @@ import {
   generateQuestionDraftCoachValidation,
   assessAnswerFitValidation,
   getSingleQuestionValidation, 
+  updateQuestionValidation,
 } from '../validations/question.validation.js';
 
 import { authenticateUser } from '../../../middleware/authentication.js';
@@ -95,6 +98,20 @@ router.post(
   authenticateUser,
   assessAnswerFitValidation,
   assessAnswerAgainstQuestionController,
+);
+
+router.put(
+  '/:questionHash',
+  authenticateUser,
+  updateQuestionValidation,
+  updateQuestionController,
+);
+
+router.delete(
+  '/:questionHash',
+  authenticateUser,
+  getSingleQuestionValidation,
+  deleteQuestionController,
 );
 
 /**

@@ -40,6 +40,27 @@ export async function createQuestion(question) {
   }
 }
 
+export async function updateQuestion(questionHash, question) {
+  try {
+    const response = await apiClient.put(
+      `/api/questions/${questionHash}`,
+      question,
+    );
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to update question. Please try again.');
+  }
+}
+
+export async function deleteQuestion(questionHash) {
+  try {
+    const response = await apiClient.delete(`/api/questions/${questionHash}`);
+    return getResponseData(response);
+  } catch (error) {
+    throw handleQuestionError(error, 'Failed to delete question. Please try again.');
+  }
+}
+
 /**
  * Requests writing feedback from the AI draft coach.
  * @param {{ title: string, content: string }} draft
@@ -90,7 +111,10 @@ export async function getQuestions(params = {}) {
  * Runs an AI-powered semantic search across questions.
  * @param {string} query
  * @param {{ k?: number, threshold?: number }} [options]
- * @returns {Promise<Array>}
+ * /**@returns {Promise<Array>}/
+ * 
+ * * @returns {Promise<{ questions: Array, suggestion: Object|null }>}
+ * 
  */
 export async function searchQuestionsSemantic(query, options = {}) {
   try {
@@ -101,7 +125,13 @@ export async function searchQuestionsSemantic(query, options = {}) {
         threshold: options.threshold,
       },
     });
-    return getResponseData(response) ?? [];
+    // return getResponseData(response) ?? [];
+/**iiiiiiiiiiiiiiiiiii */
+return {
+      questions: response.data?.data ?? [],
+      suggestion: response.data?.suggestion ?? null,
+    };
+
   } catch (error) {
     throw handleQuestionError(
       error,
@@ -176,6 +206,8 @@ export async function assessAnswerFit(questionHash, answerText) {
 
 export const questionService = {
   createQuestion,
+  updateQuestion,
+  deleteQuestion,
   generateQuestionDraftCoach,
   getQuestions,
   searchQuestionsSemantic,

@@ -16,8 +16,6 @@ export default function Dashboard() {
 
   const [questions, setQuestions] = useState([]);
   const [semanticSuggestion, setSemanticSuggestion] = useState(null);
-  const [currentTime, setCurrentTime] = useState(0);
-
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('keyword');
 
@@ -174,15 +172,12 @@ export default function Dashboard() {
       const data = await getQuestions();
 
       setQuestions(normalizeQuestions(data));
-      setCurrentTime(Date.now());
       setSemanticSuggestion(null);
-
     } catch (err) {
       console.error('Failed to load questions:', err);
 
       setQuestions([]);
       setSemanticSuggestion(null);
-
       setError('Failed to load questions.');
     } finally {
       setIsLoading(false);
@@ -204,10 +199,8 @@ export default function Dashboard() {
       if (mode === 'semantic') {
         data = await searchQuestionsSemantic(query);
         setSemanticSuggestion(data.suggestion);
-
       } else {
         setSemanticSuggestion(null);
-
         data = await getQuestions({
           search: query,
         });
@@ -220,7 +213,6 @@ export default function Dashboard() {
 
       setQuestions([]);
       setSemanticSuggestion(null);
-
       setError('Failed to search questions.');
     } finally {
       setIsLoading(false);
@@ -562,6 +554,7 @@ export default function Dashboard() {
                 <h3>
                   No questions found
                 </h3>
+
                 {searchMode === 'semantic' && semanticSuggestion ? (
                   <div className={styles.semanticSuggestion}>
                     <h4>{semanticSuggestion.suggestedQuestion}</h4>

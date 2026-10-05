@@ -111,10 +111,7 @@ export async function getQuestions(params = {}) {
  * Runs an AI-powered semantic search across questions.
  * @param {string} query
  * @param {{ k?: number, threshold?: number }} [options]
- * /**@returns {Promise<Array>}/
- * 
- * * @returns {Promise<{ questions: Array, suggestion: Object|null }>}
- * 
+ * @returns {Promise<{ questions: Array, suggestion: Object|null }>}
  */
 export async function searchQuestionsSemantic(query, options = {}) {
   try {
@@ -125,13 +122,10 @@ export async function searchQuestionsSemantic(query, options = {}) {
         threshold: options.threshold,
       },
     });
-    // return getResponseData(response) ?? [];
-/**iiiiiiiiiiiiiiiiiii */
-return {
+    return {
       questions: response.data?.data ?? [],
       suggestion: response.data?.suggestion ?? null,
     };
-
   } catch (error) {
     throw handleQuestionError(
       error,

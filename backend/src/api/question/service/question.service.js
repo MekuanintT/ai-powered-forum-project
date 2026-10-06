@@ -9,6 +9,7 @@ import {
   normalizeQuestionText,
   storeQuestionVector,
 } from "./vector.service.js";
+import { generateSemanticSearchFallbackService } from './geminiTextCoach.service.js';
 
 const generateQuestionHash = () => crypto.randomBytes(8).toString("hex");
 
@@ -310,8 +311,11 @@ export const searchQuestionsSemanticService = async ({
 
   // If nothing matches
   if (scoredQuestions.length === 0) {
+    const suggestion = await generateSemanticSearchFallbackService({ query });
+
     return {
       data: [],
+      suggestion,
       meta: {
         total: 0,
         k,
@@ -410,6 +414,7 @@ export const searchQuestionsSemanticService = async ({
 
   return {
     data,
+    suggestion: null,
     meta: {
       total: data.length,
       k,

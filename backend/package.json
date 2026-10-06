@@ -6,7 +6,8 @@
   "scripts": {
     "dev":  "nodemon --exec \"node --dns-result-order=ipv4first\" index.js",
     "start": "node index.js",
-    "test": "node --test"
+    "test": "node --test",
+    "chroma": "docker run --rm -p 8000:8000 -v \"C:/Users/Worku/Desktop/Evangadi/Week 4/RagDemo/rag-demo-backend/chroma-data:/data\" chromadb/chroma"
   },
 
   "keywords": [],

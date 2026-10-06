@@ -4,7 +4,7 @@ import { safeExecute } from '../../../../db/config.js';
 import { NotFoundError } from '../../../utils/errors/index.js';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-2.5-flash-lite';
+const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3.5-flash-lite';
 
 /**
  * Extracts the text content from a Gemini generateContent response,
@@ -95,6 +95,45 @@ Provide between 2 and 5 specific, actionable tips.`;
   }
 
   return { tips: parsed.tips };
+};
+
+export const generateSemanticSearchFallbackService = async ({ query }) => {
+  const prompt = `A learner searched an educational forum, but there are no matching forum questions yet.
+
+Search query: ${query}
+
+Suggest one clear, useful question the learner could ask about this topic, then provide a concise, accurate general explanation that helps answer it. Do not claim that this is based on forum posts or uploaded documents. If the query is ambiguous, mention the assumption you made.
+
+Respond with ONLY valid JSON in this exact shape:
+{"suggestedQuestion":"...","explanation":"..."}`;
+
+  let parsed;
+  try {
+    const response = await ai.models.generateContent({
+      model: TEXT_MODEL,
+      contents: prompt,
+    });
+    parsed = extractJson(extractResponseText(response));
+  } catch (error) {
+    console.error('Semantic search fallback generation failed:', error.message);
+  }
+
+  if (
+    !parsed ||
+    typeof parsed.suggestedQuestion !== 'string' ||
+    typeof parsed.explanation !== 'string'
+  ) {
+    return {
+      suggestedQuestion: `What should I know about ${query}?`,
+      explanation:
+        'There are no matching forum questions yet, and an AI explanation is temporarily unavailable. Try again later or ask this as a new forum question.',
+    };
+  }
+
+  return {
+    suggestedQuestion: parsed.suggestedQuestion,
+    explanation: parsed.explanation,
+  };
 };
 
 /**

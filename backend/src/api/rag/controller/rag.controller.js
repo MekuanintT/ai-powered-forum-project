@@ -61,9 +61,6 @@ export const getDocumentMetaController = async (req, res, next) => {
   }
 };
 
-
-
-
 export const createDocumentController = async (req, res, next) => {
   try {
     const document = await createDocumentFromUploadService({
@@ -80,10 +77,6 @@ export const createDocumentController = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
-
 
 /**
  * Handles downloading a specific RAG document owned by
@@ -137,9 +130,6 @@ export const deleteDocumentController = async (req, res, next) => {
   }
 };
 
-
-
-
 /**
  * Handles listing all RAG documents belonging to the authenticated user.
  *
@@ -161,9 +151,6 @@ export const listDocumentsController = async (req, res, next) => {
     next(error);
   }
 };
-
-
-
 
 
 /**

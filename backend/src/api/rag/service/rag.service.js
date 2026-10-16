@@ -164,10 +164,6 @@ export const queryDocumentService = async ({ documentId, query, userId }) => {
 
 
 
-
-
-
-
 /**
  * Fetches metadata for a RAG document owned by the authenticated user.
  *
@@ -216,9 +212,6 @@ export const getDocumentMetaService = async (documentId, userId) => {
     updated_at: row.updated_at,
   };
 };
-
-
-
 
 // Add these imports alongside the existing ones at the top of rag.service.js
 // (skip any that are already there, e.g. safeExecute / GoogleGenAI):
@@ -424,10 +417,6 @@ try {
 };
 
 
-
-
-
-
 /**
  * Deletes a RAG document owned by the authenticated user.
  *
@@ -541,8 +530,6 @@ export const listDocumentsForUserService = async (userId) => {
 
   return rows;
 };
-
-
 
 
 /**

@@ -78,8 +78,6 @@ router.post(
   createDocumentController,
 );
 
-
-
 router.get(
   '/',
   authenticateUser,

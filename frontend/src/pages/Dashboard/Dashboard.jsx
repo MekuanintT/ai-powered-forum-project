@@ -9,6 +9,8 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import styles from './Dashboard.module.css';
 
+const MIN_SEARCH_LENGTH = 5;
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ export default function Dashboard() {
   const [semanticSuggestion, setSemanticSuggestion] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('keyword');
+  const [searchHint, setSearchHint] = useState('');
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -126,6 +129,7 @@ export default function Dashboard() {
       return '';
     }
 
+    const currentTime = Date.now();
     const seconds = Math.floor(
       (currentTime - date.getTime()) / 1000
     );
@@ -207,7 +211,6 @@ export default function Dashboard() {
       }
 
       setQuestions(normalizeQuestions(data));
-      setCurrentTime(Date.now());
     } catch (err) {
       console.error('Failed to search questions:', err);
 
@@ -224,20 +227,34 @@ export default function Dashboard() {
     const semanticQuery = searchParams.get('semantic');
 
     if (semanticQuery) {
-      startTransition(() => {
-        setSearchQuery(semanticQuery);
-        setSearchMode('semantic');
-        runSearch(semanticQuery, 'semantic');
-      });
+      if (semanticQuery.trim().length < MIN_SEARCH_LENGTH) {
+        startTransition(() => {
+          setSearchQuery(semanticQuery);
+          setSearchMode('semantic');
+          setSearchHint(
+            `Type at least ${MIN_SEARCH_LENGTH} characters to search.`
+          );
+          loadQuestions();
+        });
+      } else {
+        startTransition(() => {
+          setSearchQuery(semanticQuery);
+          setSearchMode('semantic');
+          setSearchHint('');
+          runSearch(semanticQuery, 'semantic');
+        });
+      }
     } else if (keywordQuery) {
       startTransition(() => {
         setSearchQuery(keywordQuery);
         setSearchMode('keyword');
+        setSearchHint('');
         runSearch(keywordQuery, 'keyword');
       });
     } else {
       startTransition(() => {
         setSearchQuery('');
+        setSearchHint('');
         loadQuestions();
       });
     }
@@ -253,10 +270,17 @@ export default function Dashboard() {
     const query = searchQuery.trim();
 
     if (!query) {
+      setSearchHint('');
       await loadQuestions();
       return;
     }
 
+    if (query.length < MIN_SEARCH_LENGTH) {
+      setSearchHint(`Type at least ${MIN_SEARCH_LENGTH} characters to search.`);
+      return;
+    }
+
+    setSearchHint('');
     await runSearch(query, searchMode);
   };
 
@@ -421,9 +445,12 @@ export default function Dashboard() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(event) =>
-                setSearchQuery(event.target.value)
-              }
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                if (event.target.value.trim().length >= MIN_SEARCH_LENGTH) {
+                  setSearchHint('');
+                }
+              }}
               placeholder="Search questions by keyword..."
               className={styles.searchInput}
             />
@@ -454,6 +481,10 @@ export default function Dashboard() {
             Search
           </button>
         </form>
+
+        {searchHint && (
+          <p className={styles.searchHint}>{searchHint}</p>
+        )}
 
       </section>
 

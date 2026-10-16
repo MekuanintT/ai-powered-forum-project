@@ -10,12 +10,11 @@ if (!JWT_SECRET) {
 export const authenticateUser = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {   
     throw new UnauthenticatedError('Authentication invalid');
   }
 
-  const token = authHeader.split(' ')[1];
-
+  const token = authHeader.split(' ')[1];    // { b  , fbfbf}
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     req.user = {

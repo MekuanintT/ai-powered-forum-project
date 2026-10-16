@@ -16,7 +16,7 @@ export class BadRequestError extends CustomAPIError {
 export class NotFoundError extends CustomAPIError {
   constructor(message) {
     super(message);
-    this.statusCode = StatusCodes.NOT_FOUND; // 404
+    this.statusCode = StatusCodes.NOT_FOUND; // 
   }
 }
 
@@ -30,7 +30,7 @@ export class UnauthenticatedError extends CustomAPIError {
 export class ServiceUnavailableError extends CustomAPIError {
   constructor(message) {
     super(message);
-    this.statusCode = StatusCodes.SERVICE_UNAVAILABLE; // 503
+    this.statusCode = StatusCodes.SERVICE_UNAVAILABLE; // 503404
   }
 }
 

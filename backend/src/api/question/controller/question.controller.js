@@ -113,7 +113,7 @@ export const getQuestionsController = async (req, res, next) => {
       mine,
       userId: req.user?.id,
     });
-
+  
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Questions fetched successfully.",
@@ -139,7 +139,7 @@ export const getSingleQuestionController = async (req, res, next) => {
 
     const { question, answers, answersMeta } =
       await getSingleQuestionService(questionHash);
-
+      
     res.status(StatusCodes.OK).json({
       success: true,
       message: "Question fetched successfully",

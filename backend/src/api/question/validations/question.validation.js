@@ -82,9 +82,9 @@ export const getQuestionsValidation = [
  * Validates the questionHash path param format: 16-character lowercase hex.
  */
 export const getSingleQuestionValidation = [
-  param('questionHash')
+  param('questionHash')    
     .matches(/^[a-f0-9]{16}$/)
-    .withMessage('questionHash must be a 16-character hex string'),
+    .withMessage('questionHash must be a 16-character hex string'),   
 
   validationErrorHandler,
 ];
@@ -127,7 +127,7 @@ export const getSimilarQuestionsValidation = [
 export const generateQuestionDraftCoachValidation = [
   body('title')
     .optional()
-    .isString()
+    .isString()    
     .withMessage('title must be a string')
     .trim(),
 

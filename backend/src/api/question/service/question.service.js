@@ -603,7 +603,7 @@ export const getSingleQuestionService = async (
     GROUP BY q.question_id, u.user_id
   `;
 
-  const questionRows = await safeExecute(questionSql, [questionHash]);
+  const questionRows = await safeExecute(questionSql, [questionHash]); 
 
   if (!questionRows.length) {
     throw new NotFoundError("Question not found");
